@@ -25,3 +25,35 @@ Activate the virtual environment using the appropriate command for your operatin
 
 Install the necessary packages<br>
 <code>pip install -r requirements.txt</code>
+
+
+### Spin up the docker containers with Postgres and pgAdmin
+In order to load the data to the Postgres database, the database server must first be running. 
+From the main folder (weekend_box_office), spin up the containers using docker-compose.
+
+<code>docker-compose -f docker/docker_compose.yaml up</code>
+
+
+### Download the data and load it in a Postgres database
+The script <code>python_scripts/data_ingestion.py</code> downloads the Excel data from the BFI website, keeps the top 15 movies for the weekend and stores it as csv files in a folder called <code>wbo_reports</code>. It then loads the data to a Postgres database.<br> 
+
+Once the containers are up and running, execute the code below to download and load the data into the database.
+
+<code>
+python python_scripts/data_ingestion.py \<br>
+  --user=root \<br>
+  --password=root \<br>
+  --host=localhost \<br>
+  --port=5432 \<br>
+  --db=movies_db \<br>
+</code>
+
+
+### Access the data in Postgres database via pgAdmin
+To access the tables from the database, we can use <code>pgcli</code> in the terminal.<br>
+<code>pgcli -h localhost -p 5432 -u root -d movies_db</code>
+
+An easier way is to use the pgAdmin server by going to <code>http://localhost:8080</code> and using the details from the docker_compose.yaml file to login.
+Connect to the database by also using the details from the docker_compose.yaml file.
+
+TODO: add photo of the database with the tables
