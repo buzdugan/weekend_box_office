@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 from datetime import datetime
 
 import pandas as pd
@@ -10,18 +9,26 @@ from bs4 import BeautifulSoup
 
 def get_sunday_date(report_text):
     """Extracts the last date from the report text and formats it as YYYY_MM_DD."""
-    date_match = re.search(r'(\d{1,2})\s*-\s*(\d{1,2})\s*([A-Za-z]+)\s*(\d{4})', report_text)
-    if not date_match:
+    # Pattern 1: "28 February – 2 March 2025"
+    pattern1 = re.search(r"(\d{1,2})\s*(\w+)\s*–\s*(\d{1,2})\s*(\w+)\s*(\d{4})", report_text)
+    # Pattern 2: "7-9 March 2025"
+    pattern2 = re.search(r"(\d{1,2})\s*-(\d{1,2})\s*(\w+)\s*(\d{4})", report_text)
+
+    if pattern1:
+        end_day, end_month, year = pattern1.group(3), pattern1.group(4), pattern1.group(5)
+    elif pattern2:
+        end_day, end_month, year = pattern2.group(2), pattern2.group(3), pattern2.group(4)
+    else:
         return None
     
-    start_day, end_day, month, year = date_match.groups()
     year = int(year)
     end_day = int(end_day)
-    month = datetime.strptime(month, "%B").month
+    end_month = datetime.strptime(end_month, "%B").month
     
     # Construct the Sunday date
-    sunday_date = datetime(year, month, end_day).strftime("%Y_%m_%d")
+    sunday_date = datetime(year, end_month, end_day).strftime("%Y_%m_%d")
     return sunday_date
+
 
 
 def extract_past_years(URL):
@@ -55,6 +62,7 @@ def download_reports(url, REPORTS_FOLDER):
     
     for link in links[:3]:
         report_title = link.text.strip()
+        print(report_title)
         report_url = link["href"]
         
         sunday_date = get_sunday_date(report_title)
@@ -74,7 +82,9 @@ def download_reports(url, REPORTS_FOLDER):
             print(f"Converted: {filename} to csv")
             # Remove the xlsx file
             os.remove(filename)
-
+        else:
+            print(f"Failed to extract the date from the report title: {report_title}")
+            continue
 
 
 def main():
@@ -91,15 +101,12 @@ def main():
     download_reports(URL, REPORTS_FOLDER)
     print(f'Successfully downloaded the reports for {datetime.now().year}!')
 
-    for year in years:
+    for year in years[:2]:
         YEAR_URL = f"{URL}/uk-weekend-box-office-reports-{year}"
         download_reports(YEAR_URL, REPORTS_FOLDER)
         print(f'Successfully downloaded the reports for {year}!')
 
 
-if __name__ =='__main__':
+if __name__ == '__main__':
 
     main()
-
-
-
