@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 from datetime import datetime
 
 import pandas as pd
@@ -23,8 +24,8 @@ def get_sunday_date(report_text):
     return sunday_date
 
 
-def main():
-    year = 2017
+def main(year):
+
     # URL of the page with the reports
     BASE_URL = f"https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures/uk-weekend-box-office-reports-{year}"
     REPORTS_FOLDER = "wbo_reports" 
@@ -66,4 +67,6 @@ def main():
 
 
 if __name__ =='__main__':
-    main()
+
+    year = sys.argv[1]
+    main(year)
