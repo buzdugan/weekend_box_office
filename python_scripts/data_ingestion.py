@@ -24,18 +24,41 @@ def get_sunday_date(report_text):
     return sunday_date
 
 
-def main(years):
+def extract_past_years(URL):
+
+    # Send a GET request to the URL
+    response = requests.get(URL)
+
+    # Parse the HTML content using BeautifulSoup
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Initialize a list to store the extracted years
+    years = []
+
+    # Find all sections that match the pattern 'UK weekend box office reports – year'
+    headers = soup.find_all(['h2', 'h3'])
+    headers = [header for header in headers if header.text.startswith('UK weekend box office reports')]
+    for header in headers:
+        year = header.get_text(strip=True)[-4:]
+        years.append(year)
+
+    return years
+
+
+def main():
+
+    # URL of the BFI Weekend Box Office Figures page with all the years and the current year reports
+    URL = 'https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures'
+    REPORTS_FOLDER = "wbo_reports"
+    # Create a folder to store the reports
+    os.makedirs(REPORTS_FOLDER, exist_ok=True)
+
+    years = extract_past_years(URL)
 
     for year in years:
         # URL of the page with the reports
-        BASE_URL = f"https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures/uk-weekend-box-office-reports-{year}"
-        REPORTS_FOLDER = "wbo_reports" 
-
-        # Create a folder to store the reports
-        os.makedirs(REPORTS_FOLDER, exist_ok=True)
-
-        # Fetch the webpage
-        response = requests.get(BASE_URL)
+        YEAR_URL = f"{URL}/uk-weekend-box-office-reports-{year}"
+        response = requests.get(YEAR_URL)
         soup = BeautifulSoup(response.text, "html.parser")
         
         # Find all report links 
@@ -56,7 +79,7 @@ def main(years):
                     file.write(report_response.content)
                     print(f"Downloaded: {filename}")
 
-                # Load the data and keep only the first 15 rows:    
+                # Load the data and keep only the first 15 rows
                 df = pd.read_excel(filename, header=1).head(15)
                 # Write the data to a csv file
                 df.to_csv(filename.replace(".xlsx", ".csv"), index=False)
@@ -69,10 +92,8 @@ def main(years):
 
 if __name__ =='__main__':
 
-    # Get the year from the command line arguments
-    n = len(sys.argv[1]) 
-    print(sys.argv[0], sys.argv[1], n)
-    years = sys.argv[1].split(',')
-    print(years)
+    main()
 
-    main(years)
+
+# filename = "wbo_reports/2023_12_31.xlsx"
+# filename = "wbo_reports/2024_12_29.xlsx"
