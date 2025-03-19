@@ -24,49 +24,55 @@ def get_sunday_date(report_text):
     return sunday_date
 
 
-def main(year):
+def main(years):
 
-    # URL of the page with the reports
-    BASE_URL = f"https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures/uk-weekend-box-office-reports-{year}"
-    REPORTS_FOLDER = "wbo_reports" 
+    for year in years:
+        # URL of the page with the reports
+        BASE_URL = f"https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures/uk-weekend-box-office-reports-{year}"
+        REPORTS_FOLDER = "wbo_reports" 
 
-    # Create a folder to store the reports
-    os.makedirs(REPORTS_FOLDER, exist_ok=True)
+        # Create a folder to store the reports
+        os.makedirs(REPORTS_FOLDER, exist_ok=True)
 
-    # Fetch the webpage
-    response = requests.get(BASE_URL)
-    soup = BeautifulSoup(response.text, "html.parser")
-    
-    # Find all report links 
-    links = soup.find_all("a", href=True)
-    links = [link for link in links if "Weekend box office report" in link.text]
-    
-    for link in links[:3]:
-        report_title = link.text.strip()
-        report_url = link["href"]
+        # Fetch the webpage
+        response = requests.get(BASE_URL)
+        soup = BeautifulSoup(response.text, "html.parser")
         
-        sunday_date = get_sunday_date(report_title)
-        if sunday_date:
-            filename = f"{REPORTS_FOLDER}/{sunday_date}.xlsx"
+        # Find all report links 
+        links = soup.find_all("a", href=True)
+        links = [link for link in links if "Weekend box office report" in link.text]
+        
+        for link in links[:3]:
+            report_title = link.text.strip()
+            report_url = link["href"]
             
-            # Download the report
-            report_response = requests.get(report_url)
-            with open(filename, "wb") as file:
-                file.write(report_response.content)
-                print(f"Downloaded: {filename}")
+            sunday_date = get_sunday_date(report_title)
+            if sunday_date:
+                filename = f"{REPORTS_FOLDER}/{sunday_date}.xlsx"
+                
+                # Download the report
+                report_response = requests.get(report_url)
+                with open(filename, "wb") as file:
+                    file.write(report_response.content)
+                    print(f"Downloaded: {filename}")
 
-            # Load the data and keep only the first 15 rows:    
-            df = pd.read_excel(filename, header=1).head(15)
-            # Write the data to a csv file
-            df.to_csv(filename.replace(".xlsx", ".csv"), index=False)
-            print(f"Converted: {filename} to csv")
-            # Remove the xlsx file
-            os.remove(filename)
+                # Load the data and keep only the first 15 rows:    
+                df = pd.read_excel(filename, header=1).head(15)
+                # Write the data to a csv file
+                df.to_csv(filename.replace(".xlsx", ".csv"), index=False)
+                print(f"Converted: {filename} to csv")
+                # Remove the xlsx file
+                os.remove(filename)
 
-    print('Successfully downloaded the reports!')
+        print(f'Successfully downloaded the reports for {year}!')
 
 
 if __name__ =='__main__':
 
-    year = sys.argv[1]
-    main(year)
+    # Get the year from the command line arguments
+    n = len(sys.argv[1]) 
+    print(sys.argv[0], sys.argv[1], n)
+    years = sys.argv[1].split(',')
+    print(years)
+
+    main(years)
