@@ -1,3 +1,4 @@
+import argparse
 import os
 import re
 from datetime import datetime
@@ -5,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from sqlalchemy import create_engine
 
 
 def get_sunday_date(report_text):
@@ -91,7 +93,15 @@ def download_reports(url, REPORTS_FOLDER):
             continue
 
 
-def main():
+def main(params):
+
+    user = params.user
+    password = params.password
+    host = params.host 
+    port = params.port 
+    db = params.db
+    # table_name = params.table_name
+    # url = params.url
 
     # URL of the BFI Weekend Box Office Figures page with all the years and the current year reports
     URL = 'https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures'
@@ -111,6 +121,26 @@ def main():
         print(f'Successfully downloaded the reports for {year}!')
 
 
-if __name__ == '__main__':
+    # Load the data into the database
+    engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{db}')
+    # There will be a table for each csv file, with the name of the csv file
+    for csv_file in os.listdir(REPORTS_FOLDER):
+        table_name = f'movies_{csv_file.replace(".csv", "")}'
+        df = pd.read_csv(f"{REPORTS_FOLDER}/{csv_file}")
+        df.to_sql(name=table_name, con=engine, if_exists='replace')
+        print(f"Successfully loaded {table_name} to the database!")
 
-    main()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Ingest CSV data to Postgres')
+
+    parser.add_argument('--user', required=True, help='user name for postgres')
+    parser.add_argument('--password', required=True, help='password for postgres')
+    parser.add_argument('--host', required=True, help='host for postgres')
+    parser.add_argument('--port', required=True, help='port for postgres')
+    parser.add_argument('--db', required=True, help='database name for postgres')
+    # parser.add_argument('--url', required=True, help='url of the csv file')
+
+    args = parser.parse_args()
+
+    main(args)
