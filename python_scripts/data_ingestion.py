@@ -30,7 +30,6 @@ def get_sunday_date(report_text):
     return sunday_date
 
 
-
 def extract_past_years(URL):
 
     # Send a GET request to the URL
@@ -77,6 +76,11 @@ def download_reports(url, REPORTS_FOLDER):
 
             # Load the data and keep only the first 15 rows
             df = pd.read_excel(filename, header=1).head(15)
+            # Remove empty columns
+            df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+            # Add a column with the report date
+            df.insert(0, "report_date", sunday_date, True)
+
             # Write the data to a csv file
             df.to_csv(filename.replace(".xlsx", ".csv"), index=False)
             print(f"Converted: {filename} to csv")
