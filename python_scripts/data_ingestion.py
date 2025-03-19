@@ -127,7 +127,9 @@ def main(params):
     for csv_file in os.listdir(REPORTS_FOLDER):
         table_name = f'movies_{csv_file.replace(".csv", "")}'
         df = pd.read_csv(f"{REPORTS_FOLDER}/{csv_file}")
-        df.to_sql(name=table_name, con=engine, if_exists='replace')
+
+        df.head(n=0).to_sql(name=table_name,con=engine,if_exists="replace")
+        df.to_sql(name=table_name, con=engine, if_exists='append')
         print(f"Successfully loaded {table_name} to the database!")
 
 
