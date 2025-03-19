@@ -56,4 +56,7 @@ To access the tables from the database, we can use <code>pgcli</code> in the ter
 An easier way is to use the pgAdmin server by going to <code>http://localhost:8080</code> and using the details from the docker_compose.yaml file to login.
 Connect to the database by also using the details from the docker_compose.yaml file.
 
-TODO: add photo of the database with the tables
+
+<p align="center">
+  <img src="images\Postgres_tables.png">
+</p>
