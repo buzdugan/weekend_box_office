@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from sqlalchemy import create_engine
 
 
 def get_sunday_date(report_text):
