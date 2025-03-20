@@ -84,7 +84,7 @@ def download_reports(url, REPORTS_FOLDER):
             df.insert(0, "report_date", sunday_date, True)
 
             # Write the data to a csv file
-            df.to_csv(filename.replace(".xlsx", ".csv"), index=False)
+            df.to_csv(filename.replace(".xlsx", ".csv").replace(".xls", ".csv"), index=False)
             print(f"Converted: {filename} to csv")
             # Remove the xlsx file
             os.remove(filename)
