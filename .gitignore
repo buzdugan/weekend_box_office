@@ -1,4 +1,18 @@
-# Folders
+# data folders
 wbo_reports/
-*/wbo_reports/
-*/data_pgadmin/
+data_pgadmin/
+
+# log folders
+logs/
+
+# cache folders
+__pycache__/
+
+# python virtual environment 
+venv/
+
+# terraform related files
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+.terraform.lock.hcl
