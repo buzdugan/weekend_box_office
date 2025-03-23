@@ -16,39 +16,64 @@ The figures cover box offices grosses in pounds sterling, Friday to Sunday, and 
 
 ## 1. Problem Description
 
-<p align="justify">
-
-</p>
 
 
 ## 2. Project Objective
 
-<p align="justify">
 The aim of the project is to develop a <code>DATA ARCHITECTURE</code> to handle the ingestion, processing and data analysis, including a dashboard for data visualizations, in order to answer several questions about the top films released in the UK since 2017.
-</p>
+
 
 
 ## 3. Technologies
 
-<p align="justify">
-The project uses the following tools:
-- Cloud: GCP
-- Infrastructure as code (IaC): Terraform
-- Workflow orchestration: Airflow
-- Data Warehouse: BigQuery
-- Data transformation: Data Build Tool (dbt)
-- Batch processing: Spark
-</p>
+The project uses the following tools: 
+- Cloud: [**Google Cloud Platform**](https://cloud.google.com)
+- Infrastructure as code (IaC): [**Terraform**](https://www.terraform.io)
+- Containerization - [**Docker**](https://www.docker.com), [**Docker Compose**](https://docs.docker.com/compose/)
+- Data processing - [**Python**](https://www.python.org)
+- Workflow orchestration: [**Airflow**](https://airflow.apache.org)
+- Data Lake - [**Google Cloud Storage**](https://cloud.google.com/storage)
+- Data Warehouse - [**BigQuery**](https://cloud.google.com/bigquery)
+- Data transformation: [**Data Build Tool (dbt)**](https://www.getdbt.com)
+- Data visualization - [**Data Studio**](https://datastudio.google.com/overview)
 
 
+## Project architecture
+Image with the flow
 
 
 ## Project Replication
-### Local Version
-<p align="justify">
-Ensure you have at least python 3.9 installed locally on your machine. For the purpose of this project, I've used python13.
-Create a python virtual environment and install the packages from <code>requirments.txt</code> file.
-</p>
 
-### Cloud Version
+In order to replicate this project you need to follow the steps below.
 
+### Create a GCP account 
+If you don't already have one, create a [GCP account](https://console.cloud.google.com/freetrial) with $300 free credit that can be used up to 90 days.
+
+### Create a GCP project
+Once you have the account set up, you will need to create a project.
+In the Google Cloud console, go to **Menu ≡ > IAM & Admin > Create a Project**. Name the project `weekend-box-office` then select this project to work on.
+
+### Create a service account, assign roles and download the associated credentials
+You will need to create a service account (similar to a user account but for apps and workloads) and download the authentication keys to your computer. 
+Go to **IAM & Admin > Service Accounts > Create service account**.
+Name the service account `weekend-box-office-user` and leave all the other fields with the default values.
+
+Assign the following roles to the service account:
+* `Viewer`: to view most Google Cloud resources.
+* `Storage Admin`: to create and manage buckets.
+* `Storage Object Admin`: to create and manage objects in the buckets.
+* `BigQuery Admin`: to manage BigQuery resources and data.
+
+Now you need to generate the service account credential file. On the `weekend-box-office-user`, click the 3 dots below **Actions**, **Manage keys > Add key > Create new key**, select JSON and create. The file gets automatically downloaded to your computer. Rename it to `google_credentials.json` and store it in `$HOME/.google/credentials/`.
+
+
+### Download Google Cloud SDK
+You need Google Cloud SDK (Software Development Kit) to interact with GCP services and resources.
+Download [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstart) for local setup. Follow the instructions in the link to install and connect to your account and project.
+
+Set the environment variable to point to the auth keys.
+   ```shell
+   export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.google/credentials/google_credentials.json"
+
+   # Refresh token/session and verify authentication
+   gcloud auth application-default login
