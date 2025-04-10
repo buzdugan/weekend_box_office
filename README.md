@@ -8,6 +8,11 @@
 This repository is the final project for the Data Engineering Zoomcamp, cohort 2025.
 
 
+---
+## Index
+---
+
+
 ## Data Description
 
 The data comes from the British Film Institute (BFI) [Weekend Box Office](https://www.bfi.org.uk/).
@@ -46,14 +51,15 @@ Image with the flow
 
 In order to replicate this project you need to follow the steps below.
 
-### Create a GCP account 
+### Google Cloud Platform
+#### Create a GCP account 
 If you don't already have one, create a [GCP account](https://console.cloud.google.com/freetrial) with $300 free credit that can be used up to 90 days.
 
-### Create a GCP project
+#### Create a GCP project
 Once you have the account set up, you will need to create a project.
 In the Google Cloud console, go to **Menu ≡ > IAM & Admin > Create a Project**. Name the project `weekend-box-office` then select this project to work on.
 
-### Create a service account, assign roles, download associated credentials
+#### Create a service account, assign roles, download associated credentials
 You will need to create a service account (similar to a user account but for apps and workloads) and download the authentication keys to your computer. 
 Go to **IAM & Admin > Service Accounts > Create service account**.
 Name the service account `weekend-box-office-user` and leave all the other fields with the default values.
@@ -66,39 +72,40 @@ Assign the following roles to the service account:
 
 Now you need to generate the service account credential file. On the `weekend-box-office-user`, click the 3 dots below **Actions**, **Manage keys > Add key > Create new key**, select JSON and create. The file gets automatically downloaded to your computer. Rename it to `google_credentials.json` and store it in `$HOME/.google/credentials/`.
 
-
-Enable these APIs for your project:
+#### GCP APIs
+For Terraform to interact with GCP, enable the following APIs for your project:
 - [Identity and Access Management (IAM) API](https://console.cloud.google.com/apis/library/iam.googleapis.com)
 - [IAM service account credentials API](https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com)
-- [Compute Engine API](https://console.developers.google.com/apis/api/compute.googleapis.com) for using VM instances
+- [Compute Engine API](https://console.developers.google.com/apis/api/compute.googleapis.com) for using VM instances.
 
 
-
-### Setup Google Cloud SDK
+#### Setup Google Cloud SDK
 You need Google Cloud SDK (Software Development Kit) to interact with GCP services and resources.
 Download [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstart) for local setup. Follow the instructions in the link to install the version for your OS and connect to your account and project.
 
 Set the environment variable to point to the auth keys.
-   ```shell
+   ```bash
    export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.google/credentials/google_credentials.json"
 
    # Refresh token/session and verify authentication
    gcloud auth application-default login
-```
+   ```
 
 Initialise GCP SDK by running `gcloud init` from a terminal. Follow the instructions to select your account and project.
 Run `gcloud config list` to check the configurations and ensure you're using the right account and project.
 
 
 ### Terraform
-The project uses Terraform to create GCP Infrastructure.
-Follow the instructions [here](https://www.terraform.io/downloads) to install Terraform client.
+The project uses Terraform to create GCP infrastructure.
 
+#### Install Terraform
+If you don't already have terraform on your machine, follow the instructions [here](https://www.terraform.io/downloads) to install Terraform client for your OS.
 
+#### Setup cloud infrastructure
 The configuration files are in the `terraform` folder:
 - `main.tf`: the settings for launching the infrastructure in the cloud
 - `variables.tf`: the variables to make the configuration dynamic.
-Make sure you use the region and 
+Make sure you use the region and location closest to you.
 
 Use the steps below to generate resources inside the GCP:
 1. Navigate to the `terraform` folder.
@@ -107,3 +114,44 @@ Use the steps below to generate resources inside the GCP:
 4. Run `terraform apply` to apply changes to the infrastructure in the cloud.
 
 Once the resources you've created in the cloud are no longer needed, use `terraform destroy` to remove everything.
+
+
+
+### Airflow
+The project uses Apache Airflow for workflow orchestration.<br>
+You can either run it locally with `docker-compose` or in the cloud on a virtual machine. 
+
+#### Prerequisites
+In order to run Airflow, you'll first need to install `docker` and `docker-compose` on your machine.
+The easiest way to do this is by downloading and installing Docker Desktop for your OS from [here](https://docs.docker.com/desktop/).<br>
+`docker-compose` should be at least version v2.x+ and `Docker Engine` should have at least 5GB of RAM available, ideally 8GB. On Docker Desktop this can be changed in **Preferences > Resources**.
+
+#### Setup
+The `airflow` subdirectory contains the `Dockerfile` and the `docker-compose.yaml` file that are required to run Airflow.<br>
+This project uses a lightweight version with the minimal required set of components to run data pipelinesow and access the webserver. Therefore, in `docker-compose.yaml`, we have only these services: 
+- `postgres`
+- `airflow-webserver`
+- `airflow-scheduler`
+- `airflow-init`
+- `airflow-cli`
+
+In `docker-compose.yaml`, you will need to specify your Project ID (`GCP_PROJECT_ID`) and Cloud Storage name (`GCP_GCS_BUCKET`) that correspond to your GCP setup.
+
+Navigate to the `airflow` folder and run Airflow with these commands:
+```shell
+# Build the image (takes ~15 mins for the first-time)
+docker-compose build
+
+# Initialize the Airflow scheduler, DB and other stuff
+docker-compose up airflow-init
+
+# Spin up the all the services from the container
+docker-compose up
+```
+
+You can check in Docker Desktop that all the containers are running.
+
+If you want to stop Airflow, open another terminal and run `docker-compose down`.
+
+#### Run the DAGs
+Open the http://localhost:8080/ address in a browser and login using with username `airflow` and password `airflow`.
