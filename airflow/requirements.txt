@@ -1,2 +1,10 @@
 apache-airflow-providers-google
 pyarrow
+
+beautifulsoup4
+openpyxl
+pandas
+psycopg2-binary
+requests
+SQLAlchemy
+xlrd
