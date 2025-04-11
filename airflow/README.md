@@ -1,13 +1,15 @@
-# Index
-## Local Version
+Airflow can be run either:
+- locally with `docker-compose`
+- or in the cloud on a virtual machine. 
 
+## Local
 ### Setup
 Airflow needs to be installed using the minimum number of services by following the instructions [here](setup.md).
 
 
 ### Execution
 
-Build the image only on the first time or whenever there are changes to the DockerFile.
+In the `airflow` folder, build the image only on the first time or whenever there are changes to the DockerFile.
 ```
 docker-compose build
 ```
@@ -42,5 +44,4 @@ or
 docker-compose down --volumes --remove-orphans
 ```
 
-
-
+## Cloud
