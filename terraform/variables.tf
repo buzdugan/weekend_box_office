@@ -1,6 +1,6 @@
 variable "credentials" {
   description = "Service Account Credentials"
-  default     = "$HOME/.google/credentials/google_credentials.json"
+  default     = "~/.google/credentials/google_credentials.json"
 }
 
 variable "project" {
@@ -12,13 +12,13 @@ variable "project" {
 variable "region" {
   description = "Region for GCP resources"
   # Update the below to your desired region https://cloud.google.com/compute/docs/regions-zones
-  default     = "europe-west2"
+  default     = "europe-west1"
 }
 
 variable "location" {
   description = "Project Location "
   # Update the below to your desired location https://cloud.google.com/about/locations
-  default     = "EUROPE-WEST2"
+  default     = "EUROPE-WEST1"
 }
 
 variable "bq_dataset_name" {
