@@ -10,6 +10,26 @@ This repository is the final project for the Data Engineering Zoomcamp, cohort 2
 
 ---
 ## Index
+- [Data Description](#data-description)
+- [Problem Description](#problem-description)
+- [Project Objective](#project-objective)
+- [Technologies](#technologies)
+- [Project Architecture](#project-architecture)
+- [Project Replication](#project-replication)
+  - [Google Cloud Platform](#google-cloud-platform)
+    - [Create a GCP account](#create-a-gcp-account)
+    - [Create a GCP project](#create-a-gcp-project)
+    - [Create a service account, assign roles, download associated credentials](#create-a-service-account-assign-roles-download-associated-credentials)
+    - [GCP APIs](#gcp-apis)
+    - [Setup Google Cloud SDK](#setup-google-cloud-sdk)
+  - [Terraform](#terraform)
+    - [Install Terraform](#install-terraform)
+    - [Setup cloud infrastructure](#setup-cloud-infrastructure)
+  - [Airflow](#airflow)
+    - [Prerequisites](#prerequisites)
+    - [Setup](#setup)
+    - [Run the DAGs](#run-the-dags)
+  - [dbt](#dbt)
 ---
 
 
@@ -98,7 +118,7 @@ Run `gcloud config list` to check the configurations and ensure you're using the
 ### Terraform
 The project uses Terraform to create GCP infrastructure.
 
-#### Install Terraform
+#### Install Terraform locally
 If you don't already have terraform on your machine, follow the instructions [here](https://www.terraform.io/downloads) to install Terraform client for your OS.
 
 #### Setup cloud infrastructure
@@ -114,6 +134,9 @@ Use the steps below to generate resources inside the GCP:
 4. Run `terraform apply` to apply changes to the infrastructure in the cloud.
 
 Once the resources you've created in the cloud are no longer needed, use `terraform destroy` to remove everything.
+
+
+#### Install Terraform in the Cloud
 
 
 
