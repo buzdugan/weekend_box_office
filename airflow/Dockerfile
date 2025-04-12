@@ -1,6 +1,6 @@
 # First-time build can take upto 10 mins.
 
-FROM apache/airflow:2.10.5-python3.9
+FROM apache/airflow:2.2.3
 
 ENV AIRFLOW_HOME=/opt/airflow
 
@@ -8,16 +8,11 @@ USER root
 RUN apt-get update -qq && apt-get install vim -qqq
 # git gcc g++ -qqq
 
-COPY requirements.txt .
-USER airflow
-RUN pip install --no-cache-dir -r requirements.txt
-
 # Ref: https://airflow.apache.org/docs/docker-stack/recipes.html
 
-USER root
 SHELL ["/bin/bash", "-o", "pipefail", "-e", "-u", "-x", "-c"]
 
-ARG CLOUD_SDK_VERSION=513.0.0
+ARG CLOUD_SDK_VERSION=322.0.0
 ENV GCLOUD_HOME=/home/google-cloud-sdk
 
 ENV PATH="${GCLOUD_HOME}/bin/:${PATH}"
@@ -35,9 +30,13 @@ RUN DOWNLOAD_URL="https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/goo
     && rm -rf "${TMP_DIR}" \
     && gcloud --version
 
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 WORKDIR $AIRFLOW_HOME
 
-# COPY scripts scripts
-# RUN chmod +x scripts
+COPY scripts scripts
+RUN chmod +x scripts
 
 USER $AIRFLOW_UID
