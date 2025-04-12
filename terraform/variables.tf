@@ -6,7 +6,8 @@ variable "credentials" {
 variable "project" {
   description = "Your GCP Project ID"
   # Update the below to your project ID
-  default = "weekend-box-office"
+  # default = "weekend-box-office"
+  default = "ziritrion-456409"
 }
 
 variable "region" {
