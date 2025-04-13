@@ -3,6 +3,7 @@ variable "credentials" {
   default     = "~/.google/credentials/google_credentials.json"
 }
 
+# Project specific
 variable "project" {
   description = "Your GCP Project ID"
   # Update the below to your project ID
@@ -42,3 +43,9 @@ variable "composer_env_name" {
   description = "Composer Environment Name"
   default     = "composer-3"
 }
+
+variable "service_account" {
+  description = "Service account name and email"
+  default     = "weekend-box-office-user@weekend-box-office.iam.gserviceaccount.com"
+}
+
