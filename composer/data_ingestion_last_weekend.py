@@ -46,8 +46,6 @@ def get_last_sunday_date():
     last_sunday = today - timedelta(idx)
     last_sunday = last_sunday.strftime("%Y_%m_%d")
 
-    last_sunday = "2025_04_06"  # For testing purposes, set a fixed date
-
     return last_sunday
 
 
@@ -159,6 +157,7 @@ def format_to_csv():
         logging.error("Last Sunday report file not found.")
 
 
+last_sunday = get_last_sunday_date()
 
 default_args = {
     "owner": "airflow",
@@ -196,7 +195,7 @@ with DAG(
         task_id="gcs_to_bq_task",
         configuration={
             "load": {
-                "sourceUris": [f"gs://{BUCKET}/data/2025_04_06.csv"],
+                "sourceUris": [f"gs://{BUCKET}/data/{last_sunday}.csv"],
                 "destinationTable": {
                     "projectId": PROJECT_ID,
                     "datasetId": BIGQUERY_DATASET,
