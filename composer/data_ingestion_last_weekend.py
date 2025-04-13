@@ -10,7 +10,6 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
-from google.cloud import bigquery
 
 
 # URL of the BFI Weekend Box Office Figures page with all the years and the current year reports
@@ -25,18 +24,18 @@ BIGQUERY_TABLE = "weekend_top_15_movies"
 
 
 # schema definition
-schema_fields = [
-    {"name": "report_date", "type": "DATE", "mode": "REQUIRED"},
-    {"name": "rank", "type": "INTEGER", "mode": "REQUIRED"},
-    {"name": "film", "type": "STRING", "mode": "REQUIRED"},
-    {"name": "country_of_origin", "type": "STRING", "mode": "NULLABLE"},
-    {"name": "weekend_gross", "type": "INTEGER", "mode": "NULLABLE"},
-    {"name": "distributor", "type": "STRING", "mode": "NULLABLE"},
-    {"name": "percent_change_on_last_week", "type": "object", "mode": "NULLABLE"},
-    {"name": "weeks_on_release", "type": "INTEGER", "mode": "NULLABLE"},
-    {"name": "number_of_cinemas", "type": "INTEGER", "mode": "NULLABLE"},
-    {"name": "site_average", "type": "INTEGER", "mode": "NULLABLE"},
-    {"name": "total_gross_to_date", "type": "INTEGER", "mode": "NULLABLE"},
+SCHEMA = [
+    {"name": "report_date", "type": "DATE"},
+    {"name": "rank", "type": "INTEGER"},
+    {"name": "film", "type": "STRING"},
+    {"name": "country_of_origin", "type": "STRING"},
+    {"name": "weekend_gross", "type": "INTEGER"},
+    {"name": "distributor", "type": "STRING"},
+    {"name": "percent_change_on_last_week", "type": "FLOAT"},
+    {"name": "weeks_on_release", "type": "INTEGER"},
+    {"name": "number_of_cinemas", "type": "INTEGER"},
+    {"name": "site_average", "type": "INTEGER"},
+    {"name": "total_gross_to_date", "type": "INTEGER"},
 ]
 
 
@@ -197,30 +196,20 @@ with DAG(
         task_id="gcs_to_bq_task",
         configuration={
             "load": {
-                "sourceUris": [f"gs://{BUCKET}/2025_04_06.csv"],
+                "sourceUris": [f"gs://{BUCKET}/data/2025_04_06.csv"],
                 "destinationTable": {
                     "projectId": PROJECT_ID,
                     "datasetId": BIGQUERY_DATASET,
                     "tableId": BIGQUERY_TABLE,
                 },
+                "schema": {"fields": SCHEMA},
+                "skipLeadingRows": 1,
                 "sourceFormat": "CSV",
                 "writeDisposition": "WRITE_APPEND",
-                "skipLeadingRows": 1,  # Skip CSV header row
-                "schema": {
-                    "fields": schema_fields,
-                },
             }
         },
     )
 
 
     start_task >> download_last_sunday_report_task >> format_to_csv_task >> gcs_to_bq_task >> end_task
-    # start_task >> gcs_to_bq_task >> end_task
-
-
-
-
-
-
-
-
+    start_task >> gcs_to_bq_task >> end_task
