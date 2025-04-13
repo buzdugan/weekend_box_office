@@ -2,20 +2,42 @@ import logging
 import re
 from datetime import datetime, timedelta
 
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
+from google.cloud import bigquery
 
 
 # URL of the BFI Weekend Box Office Figures page with all the years and the current year reports
 URL = 'https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures'
+DATA_FOLDER = "/home/airflow/gcs/data" # Mapped default storage location created by Composer in the Cloud Storage bucket associated with the environment
+# Change the below to your own settings
 PROJECT_ID = "weekend-box-office"
-BUCKET = "weekend-box-office-bucket"
-BIGQUERY_DATASET = "movies_data"
-DATA_FOLDER = "/home/airflow/gcs/data" # Default storage location created by Composer in the Cloud Storage bucket associated with the environment
+BUCKET = "europe-west1-composer-3-d1522633-bucket" # Default storage location created by Composer in the Cloud Storage bucket associated with the environment
+BIGQUERY_DATASET = "uk_movies"
+# BIGQUERY_DATASET = "movies_db"
+BIGQUERY_TABLE = "weekend_top_15_movies"
+
+
+# schema definition
+schema_fields = [
+    {"name": "report_date", "type": "DATE", "mode": "REQUIRED"},
+    {"name": "rank", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "film", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "country_of_origin", "type": "STRING", "mode": "NULLABLE"},
+    {"name": "weekend_gross", "type": "INTEGER", "mode": "NULLABLE"},
+    {"name": "distributor", "type": "STRING", "mode": "NULLABLE"},
+    {"name": "percent_change_on_last_week", "type": "object", "mode": "NULLABLE"},
+    {"name": "weeks_on_release", "type": "INTEGER", "mode": "NULLABLE"},
+    {"name": "number_of_cinemas", "type": "INTEGER", "mode": "NULLABLE"},
+    {"name": "site_average", "type": "INTEGER", "mode": "NULLABLE"},
+    {"name": "total_gross_to_date", "type": "INTEGER", "mode": "NULLABLE"},
+]
 
 
 def get_last_sunday_date():
@@ -89,6 +111,54 @@ def download_last_sunday_report():
         return
 
 
+def clean_columns(df, last_sunday):
+    # Remove empty columns
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    # Add a column with the report date with - instead of _
+    df.insert(0, "report_date", last_sunday.replace("_", "-"), True)
+
+    # Convert to lowercase
+    columns = [col.lower().replace(" ", "_") for col in df.columns]
+    # Change the column with % to percent
+    columns = [col.replace("%", "percent") for col in columns]
+
+    # Rename columns
+    df.columns = columns
+
+    # Remove empty value substitute - from percent_change_on_last_week
+    df['percent_change_on_last_week'] = df['percent_change_on_last_week'].replace("-", None)
+
+    # Change data types
+    df['report_date'] = pd.to_datetime(df['report_date'], format='%Y-%m-%d')
+    df['rank'] = df['rank'].astype('int')
+    df['weekend_gross'] = df['weekend_gross'].astype('int')
+    df['percent_change_on_last_week'] = df['percent_change_on_last_week'].astype('float')
+    df['weeks_on_release'] = df['weeks_on_release'].astype('int')
+    df['number_of_cinemas'] = df['number_of_cinemas'].astype('int')
+    df['site_average'] = df['site_average'].astype('int')
+    df['total_gross_to_date'] = df['total_gross_to_date'].astype('int')
+
+    return df
+
+
+def format_to_csv():
+    last_sunday = get_last_sunday_date()
+    # If last Sunday's report has been downloaded, convert it to parquet
+    excel_filename = f"{DATA_FOLDER}/{last_sunday}.xlsx"
+    csv_filename = f"{DATA_FOLDER}/{last_sunday}.csv"
+
+    # Check if the file exists as Excel file in the home folder
+    if excel_filename:
+        # Load the data and keep only the first 15 rows
+        df = pd.read_excel(excel_filename, header=1).head(15)
+        # Clean the columns
+        df = clean_columns(df, last_sunday)
+        # Write the data to a csv file
+        df.to_csv(csv_filename, index=False)
+        print(f"Converted: {excel_filename} to csv")
+    else:
+        logging.error("Last Sunday report file not found.")
+
 
 
 default_args = {
@@ -110,14 +180,42 @@ with DAG(
     start_task = EmptyOperator(task_id="start_task")
     end_task = EmptyOperator(task_id="end_task")
 
+
     download_last_sunday_report_task = PythonOperator(
         task_id="download_last_sunday_report_task",
         python_callable=download_last_sunday_report,
     )
 
 
-    # start_task >> test_logging_task >> download_last_sunday_report_task >> end_task
-    start_task >> download_last_sunday_report_task >> end_task
+    format_to_csv_task = PythonOperator(
+        task_id = "format_to_csv_task",
+        python_callable=format_to_csv,
+    )
+
+
+    gcs_to_bq_task = BigQueryInsertJobOperator(
+        task_id="gcs_to_bq_task",
+        configuration={
+            "load": {
+                "sourceUris": [f"gs://{BUCKET}/2025_04_06.csv"],
+                "destinationTable": {
+                    "projectId": PROJECT_ID,
+                    "datasetId": BIGQUERY_DATASET,
+                    "tableId": BIGQUERY_TABLE,
+                },
+                "sourceFormat": "CSV",
+                "writeDisposition": "WRITE_APPEND",
+                "skipLeadingRows": 1,  # Skip CSV header row
+                "schema": {
+                    "fields": schema_fields,
+                },
+            }
+        },
+    )
+
+
+    start_task >> download_last_sunday_report_task >> format_to_csv_task >> gcs_to_bq_task >> end_task
+    # start_task >> gcs_to_bq_task >> end_task
 
 
 
