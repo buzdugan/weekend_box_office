@@ -206,10 +206,12 @@ with DAG(
                 "skipLeadingRows": 1,
                 "sourceFormat": "CSV",
                 "writeDisposition": "WRITE_APPEND",
+                "timePartitioning": {"type": "DAY", "field": "report_date"},
+                "clustering": {"fields": ["rank", "distributor", "film"]},
             }
         },
     )
 
 
     start_task >> download_last_sunday_report_task >> format_to_csv_task >> gcs_to_bq_task >> end_task
-    start_task >> gcs_to_bq_task >> end_task
+    # start_task >> gcs_to_bq_task >> end_task
