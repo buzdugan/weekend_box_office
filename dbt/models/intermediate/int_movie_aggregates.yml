@@ -1,0 +1,12 @@
+# models/intermediate/int_movie_aggregates.yml
+
+version: 2
+
+models:
+  - name: int_movie_aggregates
+    description: "Aggregated film-level statistics built from stg_box_office"
+    columns:
+      - name: film
+        tests: 
+          - not_null 
+          - unique
