@@ -1,0 +1,12 @@
+# models/intermediate/mart_distributor_performance.yml
+
+version: 2
+
+models:
+  - name: mart_distributor_performance
+    description: "Aggregated distributor-level statistics built from int_movies_aggregates"
+    columns:
+      - name: distributor
+        tests: 
+          - not_null 
+          - unique

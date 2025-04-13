@@ -4,7 +4,7 @@ version: 2
 
 models:
   - name: int_movie_aggregates
-    description: "Aggregated film-level statistics built from stg_box_office"
+    description: "Aggregated film-level statistics built from stg_movies"
     columns:
       - name: film
         tests: 
