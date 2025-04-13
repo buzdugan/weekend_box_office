@@ -37,3 +37,8 @@ variable "gcs_storage_class" {
   description = "Bucket Storage Class"
   default     = "STANDARD"
 }
+
+variable "composer_env_name" {
+  description = "Composer Environment Name"
+  default     = "composer-3"
+}
