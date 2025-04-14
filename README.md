@@ -314,3 +314,26 @@ Then run `dbt run`  to run the 3 models which will generate 3 datasets in BigQue
 
 You can now trigger the job manually or you may wait until the scheduled trigger to run it. The first time you run it, 3 new datasets will be added to BigQuery in the `prod` dataset with the same pattern as in the Development environment.
 
+
+
+### Creating the dashboard
+
+The dashboard for this project can be found [here](https://lookerstudio.google.com/u/1/reporting/14aae220-8453-4fcf-b5a3-0754a31ac256/page/PsvGF).
+It was created with [Google Looker Studio](https://lookerstudio.google.com/overview).
+Dashboards in Looker are called _reports_. Reports get data from _data sources_, so you will need to generate a data source first then the report.
+
+1. Generate the data source.
+    1. Click on the _Create_ button and choose _Data Source_.
+    1. Click on the _BigQuery_ connector.
+    1. Choose the Google Cloud project > `prod` dataset > `mart_distributor_performance` table. Click on the _Connect_ button at the top.
+    1. You can choose _None_ for all default aggregations.
+
+1. Generate the report.
+    1. From table page, click on the _Create Report_ button.
+    1. Click on _Add a chart_ and select a Pie chart. Dimension `distributor` and Metric `total_films`. This shows the number of distribution of distinct films by distributor.
+
+    1. Click on _Add a chart_ and select a Horizontal Bar chart. Dimension `distributor` and Metric Max `top_film_gross`. This shows the maximum gross by a film by distributor.
+
+You should now have a functioning dashboard.
+
+_[Back to the repo index](https://github.com/buzdugan/weekend_box_office)_
