@@ -16,23 +16,26 @@ The dashboard can be found [here](https://lookerstudio.google.com/u/1/reporting/
 - [Problem Description](#problem-description)
 - [Project Objective](#project-objective)
 - [Technologies](#technologies)
-- [Project Architecture](#project-architecture)
 - [Project Replication](#project-replication)
   - [Google Cloud Platform](#google-cloud-platform)
     - [Create a GCP account](#create-a-gcp-account)
     - [Create a GCP project](#create-a-gcp-project)
     - [Create a service account, assign roles, download associated credentials](#create-a-service-account-assign-roles-download-associated-credentials)
     - [GCP APIs](#gcp-apis)
-    - [Setup Google Cloud SDK](#setup-google-cloud-sdk)
-  - [Terraform](#terraform)
-    - [Install Terraform](#install-terraform)
-    - [Setup cloud infrastructure](#setup-cloud-infrastructure)
-  - [Airflow](#airflow)
-    - [Prerequisites](#prerequisites)
-    - [Setup](#setup)
-    - [Run the DAGs](#run-the-dags)
-  - [dbt](#dbt)
----
+    - [Set up Google Cloud SDK](#set-up-google-cloud-sdk)
+  - [Create a VM instance](#create-a-vm-instance)
+  - [Set up SSH access to the VM instance](#set-up-ssh-access-to-the-vm-instance)
+  - [Install Terraform on the VM](#install-terraform-on-the-vm)
+  - [Google credentials](#google-credentials)
+  - [Clone the repo in the VM](#clone-the-repo-in-the-vm)
+  - [Set up Cloud infrastructure](#set-up-cloud-infrastructure)
+  - [Cloud Composer](#cloud-composer)
+    - [Load the historical DAG](#load-the-historical-dag)
+    - [Load the weekly DAG](#load-the-weekly-dag)
+    - [Run the weekly DAG](#run-the-weekly-dag)
+  - [Set up dbt Cloud](#set-up-dbt-cloud)
+  - [Deploy models in dbt Cloud with a Production environment](#deploy-models-in-dbt-cloud-with-a-production-environment)
+  - [Create the dashboard](#create-the-dashboard)
 
 
 ## Data Description
@@ -64,12 +67,7 @@ The project uses the following tools:
 - Data visualization - [**Looker Studio**](https://lookerstudio.google.com/overview)
 
 
-## Project architecture
-Image with the flow
-
-
 ## Project Replication
-
 In order to replicate this project you need to follow the steps below.
 
 ### Google Cloud Platform
@@ -108,7 +106,7 @@ For Terraform to interact with GCP, enable the following APIs for your project:
 - [Cloud Composer API](https://console.cloud.google.com/apis/library/composer.googleapis.com) to be able to create Composer environment.
 
 
-#### Setup Google Cloud SDK
+#### Set up Google Cloud SDK
 You need Google Cloud SDK (Software Development Kit) to interact with GCP services and resources.
 Download [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstart) for local setup. Follow the instructions in the link to install the version for your OS and connect to your account and project.
 
@@ -271,10 +269,7 @@ If run from Thursday to Saturday, it should upload in the `data/` folder the dat
 If the dag is run on any other day, it should not upload the data and should log that the report is not yet available.
 
 
-
-
-
-## Set up dbt Cloud
+### Set up dbt Cloud
 
 1. Create a [dbt Cloud account](https://www.getdbt.com/).
 1. Create a new project.
@@ -296,7 +291,7 @@ Then run `dbt run`  to run the 3 models which will generate 3 datasets in BigQue
 * `uk_movies_dev.mart_distributor_performance` with the end-user table for the dashboard.
 
 
-### Deploying models in dbt Cloud with a Production environment
+### Deploy models in dbt Cloud with a Production environment
 
 1. Click on **Deploy > Environments** on the top left.
 1. Click on the _Create environment_ button on the top right.
@@ -315,8 +310,7 @@ Then run `dbt run`  to run the 3 models which will generate 3 datasets in BigQue
 You can now trigger the job manually or you may wait until the scheduled trigger to run it. The first time you run it, 3 new datasets will be added to BigQuery in the `prod` dataset with the same pattern as in the Development environment.
 
 
-
-### Creating the dashboard
+### Create the dashboard
 
 The dashboard for this project can be found [here](https://lookerstudio.google.com/u/1/reporting/14aae220-8453-4fcf-b5a3-0754a31ac256/page/PsvGF).
 It was created with [Google Looker Studio](https://lookerstudio.google.com/overview).
