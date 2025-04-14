@@ -45,7 +45,7 @@ The figures cover box offices grosses in pounds sterling, Friday to Sunday, and 
 
 ## Project Objective
 
-The aim of the project is to develop a <code>DATA ARCHITECTURE</code> to handle the ingestion, processing and data analysis, including a dashboard for data visualizations, in order to answer several questions about the top films released in the UK since 2017.
+The aim of the project is to handle the ingestion, processing and data analysis, including a dashboard for data visualizations, in order to answer several questions about the top films released in the UK since 2017.
 
 
 
@@ -54,13 +54,12 @@ The aim of the project is to develop a <code>DATA ARCHITECTURE</code> to handle 
 The project uses the following tools: 
 - Cloud: [**Google Cloud Platform**](https://cloud.google.com)
 - Infrastructure as code (IaC): [**Terraform**](https://www.terraform.io)
-- Containerization - [**Docker**](https://www.docker.com), [**Docker Compose**](https://docs.docker.com/compose/)
 - Data processing - [**Python**](https://www.python.org)
-- Workflow orchestration: [**Airflow**](https://airflow.apache.org)
+- Workflow orchestration: [**Google Cloud Composer**](https://cloud.google.com/composer?hl=en)
 - Data Lake - [**Google Cloud Storage**](https://cloud.google.com/storage)
 - Data Warehouse - [**BigQuery**](https://cloud.google.com/bigquery)
 - Data transformation: [**Data Build Tool (dbt)**](https://www.getdbt.com)
-- Data visualization - [**Data Studio**](https://datastudio.google.com/overview)
+- Data visualization - [**Looker Studio**](https://lookerstudio.google.com/overview)
 
 
 ## Project architecture
@@ -84,11 +83,18 @@ You will need to create a service account (similar to a user account but for app
 Go to **IAM & Admin > Service Accounts > Create service account**.
 Name the service account `weekend-box-office-user` and leave all the other fields with the default values.
 
+You will be using the same service account for all the steps in the project.
+
 Assign the following roles to the service account:
 * `Viewer`: to view most Google Cloud resources.
 * `Storage Admin`: to create and manage buckets.
 * `Storage Object Admin`: to create and manage objects in the buckets.
 * `BigQuery Admin`: to manage BigQuery resources and data.
+* `Composer Administrator`: to create, configure, and manage Cloud Composer environments.
+* `Composer Worker`: to allow execution of DAGs and tasks within a Cloud Composer environment.
+* `Environment and Storage Object Administrator`: to manage both Cloud Composer environments and the storage objects (like DAGs and plugins) used by them.
+* `Logs Writer`: to write logs to Cloud Logging from supported services.
+* `Service Account User`: to allow principals to act as or use a service account in API calls or other operations.
 
 Now you need to generate the service account credential file. On the `weekend-box-office-user`, click the 3 dots below **Actions**, **Manage keys > Add key > Create new key**, select JSON and create. The file gets automatically downloaded to your computer. Rename it to `google_credentials.json` and store it in `$HOME/.google/credentials/`.
 
@@ -97,6 +103,7 @@ For Terraform to interact with GCP, enable the following APIs for your project:
 - [Identity and Access Management (IAM) API](https://console.cloud.google.com/apis/library/iam.googleapis.com)
 - [IAM service account credentials API](https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com)
 - [Compute Engine API](https://console.developers.google.com/apis/api/compute.googleapis.com) for using VM instances.
+- [Cloud Composer API](https://console.cloud.google.com/apis/library/composer.googleapis.com) to be able to create Composer environment.
 
 
 #### Setup Google Cloud SDK
@@ -115,13 +122,87 @@ Initialise GCP SDK by running `gcloud init` from a terminal. Follow the instruct
 Run `gcloud config list` to check the configurations and ensure you're using the right account and project.
 
 
-### Terraform
-The project uses Terraform to create GCP infrastructure.
+### Create a VM instance
+ In the Google Cloud console, go to **Menu ≡ > Compute Engine > VM instances > Create instance**. Follow these steps to generate the instance.
+1. Chose any name for your instance.
+1. Select the best region and zone that work for you. Make sure you use the same location across all the Google Cloud components.<br>
+The other components will be generated with Terraform and you should modify the variables `region` and `location` inside the `variables.tf` file to be the same as the VM region.
+1. Select a _E2 series_ instance. A _e2-standard-4_ instance is recommended (4 vCPUs, 16GB RAM)
+1. In OS and Storage, change the OS to _Ubuntu_ and leave the default version _Ubuntu 20.04 LTS_. Select at least 30GB of storage.
+1. Leave everythig else as default and click on _Create_.
 
-#### Install Terraform locally
-If you don't already have terraform on your machine, follow the instructions [here](https://www.terraform.io/downloads) to install Terraform client for your OS.
 
-#### Setup cloud infrastructure
+### Set up SSH access to the VM instance
+Once created, the instance starts automatically. You can stop and start it again and eventually delete it from the 3 dots menu to the right of the instance name in Google Cloud _VM instances_ dashboard.
+
+1. In a local terminal, check to see that gcloud SDK is configured for the correct account and project. Run `gcloud config list` to list your current config's details.
+
+1. (Optional) If you need to change the account, run
+   ```bash
+   #  List the available accounts
+   gcloud auth list
+
+   # Switch account
+   gcloud config set account <your_account_email>
+   ```
+
+1. (Optional) If you need to change the project, run
+   ```bash
+   #  List the available projects
+   gcloud projects list
+
+   # Switch project
+   gcloud config set project <your_project_id>
+   ```
+
+1. (Optional) Check again to see you have the desired configuration `gcloud config list`.
+
+In order to SSH to the VM you need to create a public-private key pair and load or propagate the public key to the VM. 
+
+1. You can use the course method by running
+   ```bash
+    ssh-keygen -t rsa -f ~/.ssh/gcp -C <vm_username> -b 2048
+   ```
+to create the ssh keys called _gcp_ and _gcp.pub_ in the `~/.ssh` folder locally. 
+In GCP Console, you need to go into **Compute Engine > Settings > Metadata > SSH Keys > Edit > Add item** and copy paste the contents of the public key.
+
+1. Or you can run
+   ```bash
+   #  List the available instances
+   gcloud compute instances list
+
+   # SSH into the chosen VM instance
+   cloud compute ssh <VM_NAME> --zone=<ZONE>
+   ```
+
+
+In VSCode, with the Remote SSH extension, if you run the [command palette](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette) and look for _Remote-SSH: Connect to Host_, the instance should appear in the list. Select it to connect to it and work remotely.
+
+
+### Install Terraform on the VM
+The project uses Terraform to create GCP infrastructure, namely a BigQuery dataset and a Composer environment which creates its own Storage Bucket.
+Run this code
+   ```bash
+   # 1. Download and add HashiCorp’s GPG key to verify package authenticity
+    curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+
+    # 2. Add the official HashiCorp APT repository to your system's sources list
+    sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+    # 3. Update the package list and install Terraform
+    sudo apt-get update && sudo apt-get install terraform
+   ```
+
+
+### Google credentials
+You will need to upload the `google_credentials.json` to `$HOME/.google/credentials/` folder on your VM. These are the credentials used by the service account to access the GCP resources.
+You also need to create the `$GOOGLE_APPLICATION_CREDENTIALS` variable as specified earlier.
+You can upload the file to the VM using 
+   ```bash
+    scp path/to/local/machine/file <instance_name>:path/to/remote/vm/file
+   ```
+
+### Setup Cloud infrastructure
 The configuration files are in the `terraform` folder:
 - `main.tf`: the settings for launching the infrastructure in the cloud
 - `variables.tf`: the variables to make the configuration dynamic.
@@ -134,10 +215,6 @@ Use the steps below to generate resources inside the GCP:
 4. Run `terraform apply` to apply changes to the infrastructure in the cloud.
 
 Once the resources you've created in the cloud are no longer needed, use `terraform destroy` to remove everything.
-
-
-#### Install Terraform in the Cloud
-
 
 
 ### Airflow
@@ -178,3 +255,4 @@ If you want to stop Airflow, open another terminal and run `docker-compose down`
 
 #### Run the DAGs
 Open the http://localhost:8080/ address in a browser and login using with username `airflow` and password `airflow`.
+
