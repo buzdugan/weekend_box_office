@@ -1,0 +1,47 @@
+# models/staging/stg_movies.yml
+version: 2
+
+sources:
+  - name: staging
+    database: weekend-box-office
+    schema: uk_movies
+    tables:
+      - name: weekend_top_15_movies
+        description: "Raw UK box office data imported weekly"
+        columns:
+          - name: report_date
+            description: "Sunday date for the week"
+            tests:
+              - not_null
+          - name: rank
+            description: "Rank position in top 15"
+            tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_between:
+                  min_value: 1
+                  max_value: 15
+          - name: film
+            description: "Film title"
+            tests:
+              - not_null
+          - name: country_of_origin
+            description: "Country or countries of origin"
+          - name: weekend_gross
+            description: "Weekend gross in GBP"
+          - name: distributor
+            description: "Film distributor"
+          - name: percent_change_on_last_week
+            description: "Percentage change from previous week"
+          - name: weeks_on_release
+            description: "Number of weeks the film has been on release"
+          - name: number_of_cinemas
+            description: "Number of cinemas showing the film"
+          - name: site_average
+            description: "Average gross per cinema"
+          - name: total_gross_to_date
+            description: "Cumulative gross to date in GBP"
+
+models:
+  - name: stg_movies
+    description: >
+      Top 15 movies by gross income at UK box offices by weekend
