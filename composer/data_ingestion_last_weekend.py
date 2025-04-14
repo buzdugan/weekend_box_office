@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from datetime import datetime, timedelta
 
@@ -18,7 +19,6 @@ DATA_FOLDER = "/home/airflow/gcs/data" # Mapped default storage location created
 PROJECT_ID = "weekend-box-office"
 BUCKET = "europe-west1-composer-3-d1522633-bucket" # Default storage location created by Composer in the Cloud Storage bucket associated with the environment
 BIGQUERY_DATASET = "uk_movies"
-# BIGQUERY_DATASET = "movies_db"
 BIGQUERY_TABLE = "weekend_top_15_movies"
 
 
@@ -167,6 +167,26 @@ def format_to_csv():
         logging.error("Last Sunday report file not found.")
 
 
+def delete_reports():
+    # Delete the reports from the home folder
+    last_sunday = get_last_sunday_date()
+    excel_filename = f"{DATA_FOLDER}/{last_sunday}.xlsx"
+    csv_filename = f"{DATA_FOLDER}/{last_sunday}.csv"
+
+    if os.path.exists(excel_filename):
+        os.remove(excel_filename)
+        print(f"Deleted: {excel_filename}")
+    else:
+        logging.error("Excel file not found.")
+
+    if os.path.exists(csv_filename):
+        os.remove(csv_filename)
+        print(f"Deleted: {csv_filename}")
+    else:
+        logging.error("CSV file not found.")
+
+
+
 last_sunday = get_last_sunday_date()
 
 default_args = {
@@ -218,5 +238,10 @@ with DAG(
         },
     )
 
+    delete_reports_task = PythonOperator(
+        task_id = "delete_reports_task",
+        python_callable=delete_reports,
+    )
 
-    download_last_sunday_report_task >> format_to_csv_task >> gcs_to_bq_task
+
+    download_last_sunday_report_task >> format_to_csv_task >> gcs_to_bq_task >> delete_reports_task
