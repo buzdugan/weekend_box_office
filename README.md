@@ -16,6 +16,7 @@ The dashboard can be found [here](https://lookerstudio.google.com/u/1/reporting/
 - [Problem Description](#problem-description)
 - [Project Objective](#project-objective)
 - [Technologies](#technologies)
+- [Project Details and Implementation](#project-details-and-implementation)
 - [Project Replication](#project-replication)
   - [Google Cloud Platform](#google-cloud-platform)
     - [Create a GCP account](#create-a-gcp-account)
@@ -39,23 +40,20 @@ The dashboard can be found [here](https://lookerstudio.google.com/u/1/reporting/
 
 
 ## Data Description
-
 The data comes from the British Film Institute (BFI) [Weekend Box Office](https://www.bfi.org.uk/).
 Each week the BFI publishes box office figures for the top 15 films released in the UK, all other British releases and newly-released films.<br>
 The figures cover box offices grosses in pounds sterling, Friday to Sunday, and show the performance of each film compared to the previous week and its total UK box office gross since release.
 
-## Problem Description
 
+## Problem Description
+This is a simple project which takes data from the the website provided above and transforms it in order to visualize the movie distributors distribution by number of top grossing films over the weekend as well as a ranking of the top grossing films.
 
 
 ## Project Objective
-
 The aim of the project is to handle the ingestion, processing and data analysis, including a dashboard for data visualizations, in order to answer several questions about the top films released in the UK since 2017.
 
 
-
 ## Technologies
-
 The project uses the following tools: 
 - Cloud: [**Google Cloud Platform**](https://cloud.google.com)
 - Infrastructure as code (IaC): [**Terraform**](https://www.terraform.io)
@@ -65,6 +63,19 @@ The project uses the following tools:
 - Data Warehouse - [**BigQuery**](https://cloud.google.com/bigquery)
 - Data transformation: [**Data Build Tool (dbt)**](https://www.getdbt.com)
 - Data visualization - [**Looker Studio**](https://lookerstudio.google.com/overview)
+
+
+# Project Details and Implementation
+This project uses Google Cloud Platform, particularly BigQuery and Cloud Composer which comes with its own Cloud Storage.
+
+The Cloud infrastructure is mostly managed with Terraform, except for the VM instance which is created manually and the dbt instances.
+
+Weekly data ingestion is done via an Airflow DAG inside Cloud Composer. The DAG downloads the new report weekly into Cloud Composer default bucket which acts as the Data Lake for the project. 
+The data format is relatively complicated: an excel file from which we only select the top 15 rows, clean it and format it to csv file. The DAG creates or appends the data to a BigQuery table partitioned by week and clustered on distributor and film.
+
+dbt is used for creating the transformations needed for the visualizations. A view is created in a staging phase with aggregations by distributor and film and a final table containing the aggregations by distributor alone is materialized in the deployment phase.
+
+The dashboard is a simple Google Looker Studio report with 2 widgets.
 
 
 ## Project Replication
