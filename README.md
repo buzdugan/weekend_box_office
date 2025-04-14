@@ -65,7 +65,7 @@ The project uses the following tools:
 - Data visualization - [**Looker Studio**](https://lookerstudio.google.com/overview)
 
 
-# Project Details and Implementation
+## Project Details and Implementation
 This project uses Google Cloud Platform, particularly BigQuery and Cloud Composer which comes with its own Cloud Storage.
 
 The Cloud infrastructure is mostly managed with Terraform, except for the VM instance which is created manually and the dbt instances.
