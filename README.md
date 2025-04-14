@@ -5,7 +5,9 @@
 </p>
 
 
-This repository is the final project for the Data Engineering Zoomcamp, cohort 2025.
+This repository is the final project for the Data Engineering Zoomcamp, cohort 2025. 
+
+The dashboard can be found [here](https://lookerstudio.google.com/u/1/reporting/14aae220-8453-4fcf-b5a3-0754a31ac256/page/PsvGF).
 
 
 ---
@@ -267,4 +269,48 @@ Then go to the Airflow UI page and keep refreshing until the dag appears in the 
 `data_ingestion_last_sunday` is automatically triggered on load, but otherwise it is scheduled to run every Thursday	at 10 am to allow for the report with the data for the previous weekend to be uploaded to the website.
 If run from Thursday to Saturday, it should upload in the `data/` folder the data from the previous weekend as excel and csv files, then append the data to the BigQuery table `weekend-box-office.uk_movies.weekend_top_15_movies`.
 If the dag is run on any other day, it should not upload the data and should log that the report is not yet available.
+
+
+
+
+
+## Set up dbt Cloud
+
+1. Create a [dbt Cloud account](https://www.getdbt.com/).
+1. Create a new project.
+    1. Name the project `weekend-box-office` and under _Advanced settings_, set `dbt` as the _Project subdirectory_.
+    1. Select _BigQuery_ as a database connection.
+    1. Select the settings:
+        * Upload a Service Account JSON file > choose the `google_credentials.json` that was created previously.
+        * Under _Optional Settings_, make sure that you put your Google Cloud location under _Location_, otherwise it will default to US and dbt won't be able to create tables in the target dataset.
+    1. Under _Development credentials_, choose `uk_movies_dev` as Dataset. This is where dbt will write your models during development.
+        * Test the connection and click on _Continue_ once the connection is tested successfully.
+
+    1. In _Setup a repository_, select Github and choose your fork from your user account or you can provide a URL and clone the repo.
+1. Once the project has been created, you should be able to click on **Develop > Cloud IDE**.
+
+First you need to install the packages by running `dbt deps` in the bottom prompt.
+Then run `dbt run`  to run the 3 models which will generate 3 datasets in BigQuery:
+* `uk_movies_dev.stg_movies` with view of the source data from the `uk_movies.weekend_top_15_movies`
+* `uk_movies_dev.stg_movies` with staging view for generating the final end-user tables.
+* `uk_movies_dev.mart_distributor_performance` with the end-user table for the dashboard.
+
+
+### Deploying models in dbt Cloud with a Production environment
+
+1. Click on **Deploy > Environments** on the top left.
+1. Click on the _Create environment_ button on the top right.
+1. Name the environment `Production` of type _Deployment_. 
+1. Choose _BigQuery_ Connection
+1. In _Deployment credentials_, choose `prod` for _Dataset_ field. This is where dbt will write your models during deployment.
+1. Create a new job with these settings:
+    * _Deploy_ job
+    * Job name `weekly run`
+    * Commands `dbt build`
+    * Environment `Production`.
+    * Click _Generate docs on run_ checkbox to create documentation.
+    * Choose _Run on schedule_ checkbox, select _custom cron schedule_ and input  `0 11 * * 4` to run every Thursday at 11 am to allow the weekly DAG run to be successful.
+1. Save the job.
+
+You can now trigger the job manually or you may wait until the scheduled trigger to run it. The first time you run it, 3 new datasets will be added to BigQuery in the `prod` dataset with the same pattern as in the Development environment.
 
