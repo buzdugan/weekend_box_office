@@ -202,11 +202,18 @@ You can upload the file to the VM using
     scp path/to/local/machine/file <instance_name>:path/to/remote/vm/file
    ```
 
-### Setup Cloud infrastructure
+### Set up Cloud infrastructure
 The configuration files are in the `terraform` folder:
 - `main.tf`: the settings for launching the infrastructure in the cloud
 - `variables.tf`: the variables to make the configuration dynamic.
-Make sure you use the region and location closest to you.
+Make sure you use the region and location closest to you, the same ones you used when creating the VM.
+
+Terraform with generate 2 resources: a BigQuery dataset and a Cloud Composer 3 environment.<br>
+Cloud Composer will be used to orchestrate the workflow. It is a fully managed workflow orchestration service built on Apache Airflow, designed to automate and manage data pipelines. It integrates seamlessly with GCP suite of data analytics services. Because it’s fully managed, it reduces operational overhead by automating Airflow infrastructure management.
+
+>***IMPORTANT***: Creating a Composer 3 environment can take 20 minutes or more, so make sure the settings are correct before launching it.
+
+In the `variables.tf` file, you will need to change several variables to customize it to your project: `project`, `region` and `location`.
 
 Use the steps below to generate resources inside the GCP:
 1. Navigate to the `terraform` folder.
@@ -217,41 +224,7 @@ Use the steps below to generate resources inside the GCP:
 Once the resources you've created in the cloud are no longer needed, use `terraform destroy` to remove everything.
 
 
-### Airflow
-The project uses Apache Airflow for workflow orchestration.<br>
-You can either run it locally with `docker-compose` or in the cloud on a virtual machine. 
-
-#### Prerequisites
-In order to run Airflow, you'll first need to install `docker` and `docker-compose` on your machine.
-The easiest way to do this is by downloading and installing Docker Desktop for your OS from [here](https://docs.docker.com/desktop/).<br>
-`docker-compose` should be at least version v2.x+ and `Docker Engine` should have at least 5GB of RAM available, ideally 8GB. On Docker Desktop this can be changed in **Preferences > Resources**.
-
-#### Setup
-The `airflow` subdirectory contains the `Dockerfile` and the `docker-compose.yaml` file that are required to run Airflow.<br>
-This project uses a lightweight version with the minimal required set of components to run data pipelinesow and access the webserver. Therefore, in `docker-compose.yaml`, we have only these services: 
-- `postgres`
-- `airflow-webserver`
-- `airflow-scheduler`
-- `airflow-init`
-- `airflow-cli`
-
-In `docker-compose.yaml`, you will need to specify your Project ID (`GCP_PROJECT_ID`) and Cloud Storage name (`GCP_GCS_BUCKET`) that correspond to your GCP setup.
-
-Navigate to the `airflow` folder and run Airflow with these commands:
-```shell
-# Build the image (takes ~15 mins for the first-time)
-docker-compose build
-
-# Initialize the Airflow scheduler, DB and other stuff
-docker-compose up airflow-init
-
-# Spin up the all the services from the container
-docker-compose up
-```
-
-You can check in Docker Desktop that all the containers are running.
-
-If you want to stop Airflow, open another terminal and run `docker-compose down`.
+### Cloud Composer
 
 #### Run the DAGs
 Open the http://localhost:8080/ address in a browser and login using with username `airflow` and password `airflow`.
