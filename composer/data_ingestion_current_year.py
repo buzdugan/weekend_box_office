@@ -6,7 +6,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from airflow.decorators import task
-from airflow.operators.empty import EmptyOperator
 from airflow.models.dag import DAG
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 
@@ -167,9 +166,6 @@ with DAG(
     tags=['dez-project'],
 ) as dag:
 
-    start = EmptyOperator(task_id="start")
-    end = EmptyOperator(task_id="end")
-
     @task
     def get_files():
         return extract_file_links_and_names()
@@ -195,6 +191,6 @@ with DAG(
         task_id="upload_to_bq",
     ).expand(configuration=bq_configs)
 
-    start >> files >> downloaded >> csv_files >> bq_configs >> bq_uploads >> end
+    files >> downloaded >> csv_files >> bq_configs >> bq_uploads
 
 

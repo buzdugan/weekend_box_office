@@ -7,7 +7,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from airflow import DAG
-from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 
@@ -175,9 +174,6 @@ with DAG(
     tags=['dez-project'],
 ) as dag:
     
-    start_task = EmptyOperator(task_id="start_task")
-    end_task = EmptyOperator(task_id="end_task")
-
 
     download_last_sunday_report_task = PythonOperator(
         task_id="download_last_sunday_report_task",
@@ -212,5 +208,4 @@ with DAG(
     )
 
 
-    start_task >> download_last_sunday_report_task >> format_to_csv_task >> gcs_to_bq_task >> end_task
-    # start_task >> gcs_to_bq_task >> end_task
+    download_last_sunday_report_task >> format_to_csv_task >> gcs_to_bq_task
