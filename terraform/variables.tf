@@ -7,8 +7,7 @@ variable "credentials" {
 variable "project" {
   description = "Your GCP Project ID"
   # Update the below to your project ID
-  # default = "weekend-box-office"
-  default = "ziritrion-456409"
+  default = "weekend-box-office"
 }
 
 variable "region" {
@@ -20,32 +19,20 @@ variable "region" {
 variable "location" {
   description = "Project Location "
   # Update the below to your desired location https://cloud.google.com/about/locations
-  default     = "EUROPE-WEST1"
+  default     = "europe-west1"
 }
 
 variable "bq_dataset_name" {
   description = "BigQuery Dataset Name"
-  default     = "movies_db"
-}
-
-variable "gcs_bucket_name" {
-  description = "Storage Bucket Name"
-  # Update the below to a unique bucket name
-  default     = "weekend-box-office-bucket"
-}
-
-variable "gcs_storage_class" {
-  description = "Bucket Storage Class"
-  default     = "STANDARD"
+  default     = "uk_movies_test" # FOR TESTING ONLY, update later with final version
 }
 
 variable "composer_env_name" {
   description = "Composer Environment Name"
-  default     = "composer-3"
+  default     = "composer-3-test" # FOR TESTING ONLY, update later with final version
 }
 
 variable "service_account" {
   description = "Service account name and email"
   default     = "weekend-box-office-user@weekend-box-office.iam.gserviceaccount.com"
 }
-
