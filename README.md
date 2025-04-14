@@ -202,6 +202,14 @@ You can upload the file to the VM using
     scp path/to/local/machine/file <instance_name>:path/to/remote/vm/file
    ```
 
+### Clone the repo in the VM
+Log in to your VM instance and run this code from the `HOME` folder:
+```bash
+  git clone git@github.com:buzdugan/weekend_box_office.git
+```
+>***IMPORTANT*** I recommend that you fork the project and clone your copy to be able to change some variable in the code. If you skip this step, you will need to open the code in VS Code SSH Remote-Host, make the changes there then save them just of the instance.
+
+
 ### Set up Cloud infrastructure
 The configuration files are in the `terraform` folder:
 - `main.tf`: the settings for launching the infrastructure in the cloud
