@@ -24,12 +24,12 @@ variable "location" {
 
 variable "bq_dataset_name" {
   description = "BigQuery Dataset Name"
-  default     = "uk_movies_test" # FOR TESTING ONLY, update later with final version
+  default     = "uk_movies"
 }
 
 variable "composer_env_name" {
   description = "Composer Environment Name"
-  default     = "composer-3-test" # FOR TESTING ONLY, update later with final version
+  default     = "composer-3"
 }
 
 variable "service_account" {
