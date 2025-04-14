@@ -245,6 +245,15 @@ Once the resources you've created in the cloud are no longer needed, use `terraf
 
 ### Cloud Composer
 
+#### Check packages
+Once the Composer environment was created, click on its name and go to _Pypi packages_ in the menu bar.
+
+Check if the packages listed in the `main.tf` file got installed. If any of them is missing, you will need to click _ADD PACKAGE_. Get the package name from the terraform file (no quotes) and the version in _Extras and version 1_ tab (no quotes).
+
+When you click _Save_, the packages will be installed and the environment will be recreated, which unfortunately will take another 20+ minutes.
+Check again for packages when the environment is recreated.
+
+
 #### Load the historical DAG
 The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a connection between the date and the download link, so the dates need to be extracted from the text in the website, which makes the historical data load quite convoluted.
 
