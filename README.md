@@ -246,17 +246,17 @@ Once the resources you've created in the cloud are no longer needed, use `terraf
 ### Cloud Composer
 
 #### Load the historical DAG
-The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a connection between the date and the download link, so the dates need to be extracted from the text in the website. 
+The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a connection between the date and the download link, so the dates need to be extracted from the text in the website, which makes the historical data load quite convoluted.
 
-The dag `data_ingestion_current_year.py` downloads the reports from 2025 in parallel. However, it takes a long time to do that, therefore it's faster to run the code from the `python_scripts` folder to download the data locally and then load it to the BigQuery table via the command line.
+The dag `data_ingestion_current_year.py` downloads the reports from 2025 in parallel. However, it takes a long time to do that, therefore it is faster and recommended to run the code from the `python_scripts` folder to download the data locally. The script `historic_data_download.py` will generate a csv file with all the data called `../wbo_reports/historical_data.csv`.
+ and then load it to the BigQuery table via the command line.
    ```bash
-   bq load \
+  bq load \
   --source_format=CSV \
   --skip_leading_rows=1 \
   --field_delimiter="," \
-  weekend-box-office:uk_movies.weekend_top_15_movies \
-  <path_to_the_historical_csv_file>
-
+  weekend-box-office:uk_movies_test.weekend_top_15_movies \
+  <path_before_the_repo_folder>/weekend_box_office/wbo_reports/historical_data.csv \
   report_date:DATE,rank:INTEGER,film:STRING,country_of_origin:STRING,weekend_gross:INTEGER,distributor:STRING,percent_change_on_last_week:FLOAT,weeks_on_release:INTEGER,number_of_cinemas:INTEGER,site_average:INTEGER,total_gross_to_date:INTEGER
    ```
 If you prefer to use the dag, then follow the same steps as for loading the weekly dag.
