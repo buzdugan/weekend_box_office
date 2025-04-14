@@ -11,7 +11,6 @@ from airflow.models.dag import DAG
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 
 
-
 # URL of the BFI Weekend Box Office Figures page with all the years and the current year reports
 URL = 'https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures'
 DATA_FOLDER = "/home/airflow/gcs/data" # Mapped default storage location created by Composer in the Cloud Storage bucket associated with the environment
@@ -19,7 +18,6 @@ DATA_FOLDER = "/home/airflow/gcs/data" # Mapped default storage location created
 PROJECT_ID = "weekend-box-office"
 BUCKET = "europe-west1-composer-3-d1522633-bucket" # Default storage location created by Composer in the Cloud Storage bucket associated with the environment
 BIGQUERY_DATASET = "uk_movies"
-# BIGQUERY_DATASET = "movies_db"
 BIGQUERY_TABLE = "weekend_top_15_movies"
 
 
@@ -71,7 +69,7 @@ def extract_file_links_and_names():
     links = [link for link in links if "Weekend box office report" in link.text]
 
     files_to_process = []
-    for link in links[1:3]:  # Limit to 2 reports for testing parallel processing
+    for link in links:
         report_title = link.text.strip()
         report_url = link["href"]
         sunday_date = get_sunday_date_from_report_title(report_title)
