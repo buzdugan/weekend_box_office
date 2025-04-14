@@ -226,6 +226,37 @@ Once the resources you've created in the cloud are no longer needed, use `terraf
 
 ### Cloud Composer
 
-#### Run the DAGs
-Open the http://localhost:8080/ address in a browser and login using with username `airflow` and password `airflow`.
+#### Load the historical DAG
+The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a connection between the date and the download link, so the dates need to be extracted from the text in the website. 
+
+The dag `data_ingestion_current_year.py` downloads the reports from 2025 in parallel. However, it takes a long time to do that, therefore it's faster to run the code from the `python_scripts` folder to download the data locally and then load it to the BigQuery table via the command line.
+   ```bash
+   bq load \
+  --source_format=CSV \
+  --skip_leading_rows=1 \
+  --field_delimiter="," \
+  weekend-box-office:uk_movies.weekend_top_15_movies \
+  <path_to_the_historical_csv_file>
+
+  report_date:DATE,rank:INTEGER,film:STRING,country_of_origin:STRING,weekend_gross:INTEGER,distributor:STRING,percent_change_on_last_week:FLOAT,weeks_on_release:INTEGER,number_of_cinemas:INTEGER,site_average:INTEGER,total_gross_to_date:INTEGER
+   ```
+If you prefer to use the dag, then follow the same steps as for loading the weekly dag.
+
+#### Load the weekly DAG
+Composer creates its own bucket where it stores objects such as dags, data, plugins and logs in their respective folders.
+In the terraform file, you can specify the bucket yourself, and then link it to the composer environment, but in this case it creates its own bucket. 
+Once the environment is created, in the GCP Console, navigate to Composer Environments, and click on your environment.
+Here you will open 2 pages by clicking in the top part on:
+- `OPEN AIRFLOW UI`
+- `OPEN DAGS FOLDER`
+
+The second page shows the bucket contents. You can copy the name of the bucket from here and replace it in the dag `composer\data_ingestion_last_weekend.py` where it says `BUCKET = "europe-west1-composer-3-d1522633-bucket"`.
+Save the file and then load it into the dags folder via the GCP Console by going to ***Upload > Upload files***.
+
+#### Run the weekly DAG
+Then go to the Airflow UI page and keep refreshing until the dag appears in the list. This can take anywhere between 30 seconds to 2 minutes.
+
+`data_ingestion_last_sunday` is automatically triggered on load, but otherwise it is scheduled to run every Thursday	at 10 am to allow for the report with the data for the previous weekend to be uploaded to the website.
+If run from Thursday to Saturday, it should upload in the `data/` folder the data from the previous weekend as excel and csv files, then append the data to the BigQuery table `weekend-box-office.uk_movies.weekend_top_15_movies`.
+If the dag is run on any other day, it should not upload the data and should log that the report is not yet available.
 
