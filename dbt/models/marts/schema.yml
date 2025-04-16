@@ -4,7 +4,7 @@ version: 2
 
 models:
   - name: mart_distributor_performance
-    description: "Aggregated distributor-level statistics built from int_movies_aggregates"
+    description: "Aggregated distributor-level statistics built from int_movie_performance"
     columns:
       - name: distributor
         tests: 
