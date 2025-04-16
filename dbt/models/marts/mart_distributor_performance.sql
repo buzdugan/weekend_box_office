@@ -16,9 +16,9 @@ select
     -- weeks on release
     max(weeks_on_release) as max_weeks_on_release,
     case
-        when max(weeks_on_release) = 1 then 'new release'
-        when max(weeks_on_release) between 2 and 4 then 'early run'
-        else 'extended run'
+        when max(weeks_on_release) = 1 then '1 new release'
+        when max(weeks_on_release) between 2 and 4 then '2 early run'
+        else '3 extended run'
     end as max_release_phase,
     array_agg(distinct release_phase) as release_phases,
     -- earnings
