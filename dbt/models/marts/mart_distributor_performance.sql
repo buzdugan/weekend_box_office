@@ -29,6 +29,7 @@ select
     sum(total_gross_to_date) as total_gross_to_date
 
 from {{ ref('int_movie_performance') }}
+where distributor is not null
 group by 
     distributor, 
     report_date
