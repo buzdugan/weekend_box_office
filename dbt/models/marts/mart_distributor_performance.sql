@@ -3,7 +3,7 @@
 select
     distributor,
     report_date,
-    count(distinct film) as num_films,
+    count(distinct film) as number_of_films,
     max(number_of_countries) as max_number_of_countries,
     -- rank
     min(rank) as top_rank,
