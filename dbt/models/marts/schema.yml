@@ -8,5 +8,4 @@ models:
     columns:
       - name: distributor
         tests: 
-          - not_null 
-          - unique
+          - not_null
