@@ -1,9 +1,9 @@
-# models/intermediate/int_movie_aggregates.yml
+# models/intermediate/int_movie_performance.yml
 
 version: 2
 
 models:
-  - name: int_movie_aggregates
+  - name: int_movie_performance
     description: "Aggregated film-level statistics built from stg_movies"
     columns:
       - name: film
