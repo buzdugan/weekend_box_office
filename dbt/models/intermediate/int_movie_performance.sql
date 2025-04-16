@@ -26,9 +26,9 @@ select
     weeks_on_release,
     -- release phase
     case
-        when weeks_on_release = 1 then 'new release'
-        when weeks_on_release between 2 and 4 then 'early run'
-        else 'extended run'
+        when weeks_on_release = 1 then '1 new release'
+        when weeks_on_release between 2 and 4 then '2 early run'
+        else '3 extended run'
     end as release_phase,
     number_of_cinemas,
     site_average
