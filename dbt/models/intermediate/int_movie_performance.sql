@@ -16,7 +16,7 @@ select
     end as rank_category,
     weekend_gross,
     total_gross_to_date,
-    percent_change_on_last_week,
+    round(percent_change_on_last_week, 2) as percent_change_on_last_week,
     -- week trend
     case
         when percent_change_on_last_week > 0 then 'up'
