@@ -5,7 +5,9 @@
 </p>
 
 
-This repository is the final project for the Data Engineering Zoomcamp, cohort 2025.
+This repository is the final project for the Data Engineering Zoomcamp, cohort 2025. 
+
+The dashboard can be found [here](https://lookerstudio.google.com/u/1/reporting/14aae220-8453-4fcf-b5a3-0754a31ac256/page/PsvGF).
 
 
 ---
@@ -14,43 +16,44 @@ This repository is the final project for the Data Engineering Zoomcamp, cohort 2
 - [Problem Description](#problem-description)
 - [Project Objective](#project-objective)
 - [Technologies](#technologies)
-- [Project Architecture](#project-architecture)
+- [Project Details and Implementation](#project-details-and-implementation)
 - [Project Replication](#project-replication)
   - [Google Cloud Platform](#google-cloud-platform)
     - [Create a GCP account](#create-a-gcp-account)
     - [Create a GCP project](#create-a-gcp-project)
     - [Create a service account, assign roles, download associated credentials](#create-a-service-account-assign-roles-download-associated-credentials)
     - [GCP APIs](#gcp-apis)
-    - [Setup Google Cloud SDK](#setup-google-cloud-sdk)
-  - [Terraform](#terraform)
-    - [Install Terraform](#install-terraform)
-    - [Setup cloud infrastructure](#setup-cloud-infrastructure)
-  - [Airflow](#airflow)
-    - [Prerequisites](#prerequisites)
-    - [Setup](#setup)
-    - [Run the DAGs](#run-the-dags)
-  - [dbt](#dbt)
----
+    - [Set up Google Cloud SDK](#set-up-google-cloud-sdk)
+  - [Create a VM instance](#create-a-vm-instance)
+  - [Set up SSH access to the VM instance](#set-up-ssh-access-to-the-vm-instance)
+  - [Install Terraform on the VM](#install-terraform-on-the-vm)
+  - [Google credentials](#google-credentials)
+  - [Clone the repo in the VM](#clone-the-repo-in-the-vm)
+  - [Set up Cloud infrastructure](#set-up-cloud-infrastructure)
+  - [Cloud Composer](#cloud-composer)
+    - [Load the historical DAG](#load-the-historical-dag)
+    - [Load the weekly DAG](#load-the-weekly-dag)
+    - [Run the weekly DAG](#run-the-weekly-dag)
+  - [Set up dbt Cloud](#set-up-dbt-cloud)
+  - [Deploy models in dbt Cloud with a Production environment](#deploy-models-in-dbt-cloud-with-a-production-environment)
+  - [Create the dashboard](#create-the-dashboard)
 
 
 ## Data Description
-
 The data comes from the British Film Institute (BFI) [Weekend Box Office](https://www.bfi.org.uk/).
 Each week the BFI publishes box office figures for the top 15 films released in the UK, all other British releases and newly-released films.<br>
 The figures cover box offices grosses in pounds sterling, Friday to Sunday, and show the performance of each film compared to the previous week and its total UK box office gross since release.
 
-## Problem Description
 
+## Problem Description
+This is a simple project which takes data from the the website provided above and transforms it in order to visualize the movie distributors distribution by number of top grossing films over the weekend as well as a ranking of the top grossing films.
 
 
 ## Project Objective
-
 The aim of the project is to handle the ingestion, processing and data analysis, including a dashboard for data visualizations, in order to answer several questions about the top films released in the UK since 2017.
 
 
-
 ## Technologies
-
 The project uses the following tools: 
 - Cloud: [**Google Cloud Platform**](https://cloud.google.com)
 - Infrastructure as code (IaC): [**Terraform**](https://www.terraform.io)
@@ -62,12 +65,20 @@ The project uses the following tools:
 - Data visualization - [**Looker Studio**](https://lookerstudio.google.com/overview)
 
 
-## Project architecture
-Image with the flow
+## Project Details and Implementation
+This project uses Google Cloud Platform, particularly BigQuery and Cloud Composer which comes with its own Cloud Storage.
+
+The Cloud infrastructure is mostly managed with Terraform, except for the VM instance which is created manually and the dbt instances.
+
+Weekly data ingestion is done via an Airflow DAG inside Cloud Composer. The DAG downloads the new report weekly into Cloud Composer default bucket which acts as the Data Lake for the project. 
+The data format is relatively complicated: an excel file from which we only select the top 15 rows, clean it and format it to csv file. The DAG creates or appends the data to a BigQuery table partitioned by week and clustered on distributor and film.
+
+dbt is used for creating the transformations needed for the visualizations. A view is created in a staging phase with aggregations by distributor and film and a final table containing the aggregations by distributor alone is materialized in the deployment phase.
+
+The dashboard is a simple Google Looker Studio report with 2 widgets.
 
 
 ## Project Replication
-
 In order to replicate this project you need to follow the steps below.
 
 ### Google Cloud Platform
@@ -106,7 +117,7 @@ For Terraform to interact with GCP, enable the following APIs for your project:
 - [Cloud Composer API](https://console.cloud.google.com/apis/library/composer.googleapis.com) to be able to create Composer environment.
 
 
-#### Setup Google Cloud SDK
+#### Set up Google Cloud SDK
 You need Google Cloud SDK (Software Development Kit) to interact with GCP services and resources.
 Download [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstart) for local setup. Follow the instructions in the link to install the version for your OS and connect to your account and project.
 
@@ -234,18 +245,27 @@ Once the resources you've created in the cloud are no longer needed, use `terraf
 
 ### Cloud Composer
 
-#### Load the historical DAG
-The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a connection between the date and the download link, so the dates need to be extracted from the text in the website. 
+#### Check packages
+Once the Composer environment was created, click on its name and go to _Pypi packages_ in the menu bar.
 
-The dag `data_ingestion_current_year.py` downloads the reports from 2025 in parallel. However, it takes a long time to do that, therefore it's faster to run the code from the `python_scripts` folder to download the data locally and then load it to the BigQuery table via the command line.
+Check if the packages listed in the `main.tf` file got installed. If any of them is missing, you will need to click _ADD PACKAGE_. Get the package name from the terraform file (no quotes) and the version in _Extras and version 1_ tab (no quotes).
+
+When you click _Save_, the packages will be installed and the environment will be recreated, which unfortunately will take another 20+ minutes.
+Check again for packages when the environment is recreated.
+
+
+#### Load the historical DAG
+The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a connection between the date and the download link, so the dates need to be extracted from the text in the website, which makes the historical data load quite convoluted.
+
+The dag `data_ingestion_current_year.py` downloads the reports from 2025 in parallel. However, it takes a long time to do that, therefore it is faster and recommended to run the code from the `python_scripts` folder to download the data locally. The script `historic_data_download.py` will generate a csv file with all the data called `../wbo_reports/historical_data.csv`.
+ and then load it to the BigQuery table via the command line.
    ```bash
-   bq load \
+  bq load \
   --source_format=CSV \
   --skip_leading_rows=1 \
   --field_delimiter="," \
-  weekend-box-office:uk_movies.weekend_top_15_movies \
-  <path_to_the_historical_csv_file>
-
+  weekend-box-office:uk_movies_test.weekend_top_15_movies \
+  <path_before_the_repo_folder>/weekend_box_office/wbo_reports/historical_data.csv \
   report_date:DATE,rank:INTEGER,film:STRING,country_of_origin:STRING,weekend_gross:INTEGER,distributor:STRING,percent_change_on_last_week:FLOAT,weeks_on_release:INTEGER,number_of_cinemas:INTEGER,site_average:INTEGER,total_gross_to_date:INTEGER
    ```
 If you prefer to use the dag, then follow the same steps as for loading the weekly dag.
@@ -268,3 +288,66 @@ Then go to the Airflow UI page and keep refreshing until the dag appears in the 
 If run from Thursday to Saturday, it should upload in the `data/` folder the data from the previous weekend as excel and csv files, then append the data to the BigQuery table `weekend-box-office.uk_movies.weekend_top_15_movies`.
 If the dag is run on any other day, it should not upload the data and should log that the report is not yet available.
 
+
+### Set up dbt Cloud
+
+1. Create a [dbt Cloud account](https://www.getdbt.com/).
+1. Create a new project.
+    1. Name the project `weekend-box-office` and under _Advanced settings_, set `dbt` as the _Project subdirectory_.
+    1. Select _BigQuery_ as a database connection.
+    1. Select the settings:
+        * Upload a Service Account JSON file > choose the `google_credentials.json` that was created previously.
+        * Under _Optional Settings_, make sure that you put your Google Cloud location under _Location_, otherwise it will default to US and dbt won't be able to create tables in the target dataset.
+    1. Under _Development credentials_, choose `uk_movies_dev` as Dataset. This is where dbt will write your models during development.
+        * Test the connection and click on _Continue_ once the connection is tested successfully.
+
+    1. In _Setup a repository_, select Github and choose your fork from your user account or you can provide a URL and clone the repo.
+1. Once the project has been created, you should be able to click on **Develop > Cloud IDE**.
+
+First you need to install the packages by running `dbt deps` in the bottom prompt.
+Then run `dbt run`  to run the 3 models which will generate 3 datasets in BigQuery:
+* `uk_movies_dev.stg_movies` with view of the source data from the `uk_movies.weekend_top_15_movies`
+* `uk_movies_dev.stg_movies` with staging view for generating the final end-user tables.
+* `uk_movies_dev.mart_distributor_performance` with the end-user table for the dashboard.
+
+
+### Deploy models in dbt Cloud with a Production environment
+
+1. Click on **Deploy > Environments** on the top left.
+1. Click on the _Create environment_ button on the top right.
+1. Name the environment `Production` of type _Deployment_. 
+1. Choose _BigQuery_ Connection
+1. In _Deployment credentials_, choose `prod` for _Dataset_ field. This is where dbt will write your models during deployment.
+1. Create a new job with these settings:
+    * _Deploy_ job
+    * Job name `weekly run`
+    * Commands `dbt build`
+    * Environment `Production`.
+    * Click _Generate docs on run_ checkbox to create documentation.
+    * Choose _Run on schedule_ checkbox, select _custom cron schedule_ and input  `0 11 * * 4` to run every Thursday at 11 am to allow the weekly DAG run to be successful.
+1. Save the job.
+
+You can now trigger the job manually or you may wait until the scheduled trigger to run it. The first time you run it, 3 new datasets will be added to BigQuery in the `prod` dataset with the same pattern as in the Development environment.
+
+
+### Create the dashboard
+
+The dashboard for this project can be found [here](https://lookerstudio.google.com/u/1/reporting/14aae220-8453-4fcf-b5a3-0754a31ac256/page/PsvGF).
+It was created with [Google Looker Studio](https://lookerstudio.google.com/overview).
+Dashboards in Looker are called _reports_. Reports get data from _data sources_, so you will need to generate a data source first then the report.
+
+1. Generate the data source.
+    1. Click on the _Create_ button and choose _Data Source_.
+    1. Click on the _BigQuery_ connector.
+    1. Choose the Google Cloud project > `prod` dataset > `mart_distributor_performance` table. Click on the _Connect_ button at the top.
+    1. You can choose _None_ for all default aggregations.
+
+1. Generate the report.
+    1. From table page, click on the _Create Report_ button.
+    1. Click on _Add a chart_ and select a Pie chart. Dimension `distributor` and Metric `total_films`. This shows the number of distribution of distinct films by distributor.
+
+    1. Click on _Add a chart_ and select a Horizontal Bar chart. Dimension `distributor` and Metric Max `top_film_gross`. This shows the maximum gross by a film by distributor.
+
+You should now have a functioning dashboard.
+
+_[Back to the repo index](https://github.com/buzdugan/weekend_box_office)_

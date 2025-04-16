@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from datetime import datetime, timedelta
 
@@ -7,7 +8,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from airflow import DAG
-from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 
@@ -19,7 +19,6 @@ DATA_FOLDER = "/home/airflow/gcs/data" # Mapped default storage location created
 PROJECT_ID = "weekend-box-office"
 BUCKET = "europe-west1-composer-3-d1522633-bucket" # Default storage location created by Composer in the Cloud Storage bucket associated with the environment
 BIGQUERY_DATASET = "uk_movies"
-# BIGQUERY_DATASET = "movies_db"
 BIGQUERY_TABLE = "weekend_top_15_movies"
 
 
@@ -50,25 +49,36 @@ def get_last_sunday_date():
 
 
 def get_sunday_date_from_report_title(report_text):
-    "Extracts the last date from the report text and formats it as YYYY_MM_DD."
-    # Replace " to " with " – "
-    report_text = report_text.replace(" to ", " – ")
-    # Pattern 1: "28 February – 2 March 2025 or 28 February to 2 March 2025"
-    pattern1 = re.search(r"(\d{1,2})\s*(\w+)\s*–\s*(\d{1,2})\s*(\w+)\s*(\d{4})", report_text)
-    # Pattern 2: "7-9 March 2025 or 7 to 9 March 2025"
-    pattern2 = re.search(r"(\d{1,2})\s*–\s*(\d{1,2})\s*(\w+)\s*(\d{4})", report_text)
+    """Extracts the last date from the report text and formats it as YYYY_MM_DD."""
+    # Standardize separators
+    report_text = report_text.replace(" to ", " - ")
+    
+    # Pattern 1: "28 February - 2 March 2025" (different months)
+    pattern1 = re.search(r"(\d{1,2})\s*(\w+)\s*-\s*(\d{1,2})\s*(\w+)\s*(\d{4})", report_text)
+
+    # Pattern 2: "7-9 March 2025" or "7 - 9 March 2025" (same month)
+    pattern2 = re.search(r"(\d{1,2})\s*-\s*(\d{1,2})\s*(\w+)\s*(\d{4})", report_text)
+    
+    # Pattern 3: "24-26 January 2025" (no spaces around hyphen)
+    pattern3 = re.search(r"(\d{1,2})-(\d{1,2})\s*(\w+)\s*(\d{4})", report_text)
+    
+    # Pattern 4: "24 December 2024 - 26 January 2025" (different months with years)
+    pattern4 = re.search(r"(\d{1,2})\s*(\w+)\s*(\d{4})\s*-\s*(\d{1,2})\s*(\w+)\s*(\d{4})", report_text)
     
     if pattern1:
         end_day, end_month, year = pattern1.group(3), pattern1.group(4), pattern1.group(5)
     elif pattern2:
         end_day, end_month, year = pattern2.group(2), pattern2.group(3), pattern2.group(4)
+    elif pattern3:
+        end_day, end_month, year = pattern3.group(2), pattern3.group(3), pattern3.group(4)
+    elif pattern4:
+        end_day, end_month, year = pattern4.group(4), pattern4.group(5), pattern4.group(6)
     else:
         return None
     
     year = int(year)
     end_day = int(end_day)
     end_month = datetime.strptime(end_month, "%B").month
-
     # Construct the Sunday date
     sunday_date = datetime(year, end_month, end_day).strftime("%Y_%m_%d")
     return sunday_date
@@ -123,7 +133,7 @@ def clean_columns(df, last_sunday):
     df.columns = columns
 
     # Remove empty value substitute - from percent_change_on_last_week
-    df['percent_change_on_last_week'] = df['percent_change_on_last_week'].replace("-", None)
+    df['percent_change_on_last_week'] = df['percent_change_on_last_week'].replace("-", None).replace(" - ", None)
 
     # Change data types
     df['report_date'] = pd.to_datetime(df['report_date'], format='%Y-%m-%d')
@@ -157,6 +167,26 @@ def format_to_csv():
         logging.error("Last Sunday report file not found.")
 
 
+def delete_reports():
+    # Delete the reports from the home folder
+    last_sunday = get_last_sunday_date()
+    excel_filename = f"{DATA_FOLDER}/{last_sunday}.xlsx"
+    csv_filename = f"{DATA_FOLDER}/{last_sunday}.csv"
+
+    if os.path.exists(excel_filename):
+        os.remove(excel_filename)
+        print(f"Deleted: {excel_filename}")
+    else:
+        logging.error("Excel file not found.")
+
+    if os.path.exists(csv_filename):
+        os.remove(csv_filename)
+        print(f"Deleted: {csv_filename}")
+    else:
+        logging.error("CSV file not found.")
+
+
+
 last_sunday = get_last_sunday_date()
 
 default_args = {
@@ -175,9 +205,6 @@ with DAG(
     tags=['dez-project'],
 ) as dag:
     
-    start_task = EmptyOperator(task_id="start_task")
-    end_task = EmptyOperator(task_id="end_task")
-
 
     download_last_sunday_report_task = PythonOperator(
         task_id="download_last_sunday_report_task",
@@ -211,6 +238,10 @@ with DAG(
         },
     )
 
+    delete_reports_task = PythonOperator(
+        task_id = "delete_reports_task",
+        python_callable=delete_reports,
+    )
 
-    start_task >> download_last_sunday_report_task >> format_to_csv_task >> gcs_to_bq_task >> end_task
-    # start_task >> gcs_to_bq_task >> end_task
+
+    download_last_sunday_report_task >> format_to_csv_task >> gcs_to_bq_task >> delete_reports_task

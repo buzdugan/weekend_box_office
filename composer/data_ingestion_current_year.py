@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime
 
@@ -6,7 +7,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from airflow.decorators import task
-from airflow.operators.empty import EmptyOperator
 from airflow.models.dag import DAG
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 
@@ -152,6 +152,14 @@ def generate_bq_config(filename):
     }
 
 
+def delete_reports():
+    # Delete the reports from the home folder
+    files = os.listdir(DATA_FOLDER)
+    for file in files:
+        if file.endswith(".xlsx") or file.endswith(".csv"):
+            os.remove(os.path.join(DATA_FOLDER, file))
+            print(f"Deleted {file}")
+
 
 default_args = {
     "owner": "airflow",
@@ -166,9 +174,6 @@ with DAG(
     max_active_runs=1,
     tags=['dez-project'],
 ) as dag:
-
-    start = EmptyOperator(task_id="start")
-    end = EmptyOperator(task_id="end")
 
     @task
     def get_files():
@@ -185,6 +190,12 @@ with DAG(
     @task
     def bq_config(filename):
         return generate_bq_config(filename)
+    
+
+    @task
+    def delete_reports():
+        delete_reports()
+    
 
     files = get_files()
     downloaded = download.expand(file_info=files)
@@ -195,6 +206,9 @@ with DAG(
         task_id="upload_to_bq",
     ).expand(configuration=bq_configs)
 
-    start >> files >> downloaded >> csv_files >> bq_configs >> bq_uploads >> end
+    delete_reports = delete_reports()
+
+
+    files >> downloaded >> csv_files >> bq_configs >> bq_uploads >> delete_reports
 
 
