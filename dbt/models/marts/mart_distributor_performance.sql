@@ -1,4 +1,13 @@
 -- models/mart/mart_distributor_performance.sql
+{{ config(
+    materialized='table',
+    partition_by={
+      "field": "report_date",
+      "data_type": "date"
+    },
+    cluster_by=["distributor", "top_rank_category"]
+) }}
+
 
 select
     distributor,
