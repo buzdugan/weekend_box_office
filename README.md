@@ -26,6 +26,7 @@ The dashboard can be found [here](https://lookerstudio.google.com/reporting/1ad7
     - [Set up Google Cloud SDK](#set-up-google-cloud-sdk)
   - [Create a VM instance](#create-a-vm-instance)
   - [Set up SSH access to the VM instance](#set-up-ssh-access-to-the-vm-instance)
+  - [SSH into the VM](#ssh-into-the-vm)
   - [Install Terraform on the VM](#install-terraform-on-the-vm)
   - [Google credentials](#google-credentials)
   - [Clone the repo in the VM](#clone-the-repo-in-the-vm)
@@ -50,7 +51,7 @@ This is a simple project which takes data from the the website provided above an
 
 
 ## Project Objective
-The aim of the project is to handle the x, processing and data analysis, including a dashboard for data visualizations, in order to answer several questions about the top films released in the UK since 2017.
+The aim of the project is to handle the ingestion, processing and data analysis, including a dashboard for data visualizations, in order to answer several questions about the top distributors of movies released in the UK since 2017.
 
 
 ## Technologies
@@ -71,11 +72,11 @@ This project uses Google Cloud Platform, particularly BigQuery and Cloud Compose
 The Cloud infrastructure is mostly managed with Terraform, except for the VM instance which is created manually and the dbt instances.
 
 Weekly data ingestion is done via an Airflow DAG inside Cloud Composer. The DAG downloads the new report weekly into Cloud Composer default bucket which acts as the Data Lake for the project. 
-The data format is relatively complicated: an excel file from which we only select the top 15 rows, clean it and format it to csv file. The DAG creates or appends the data to a BigQuery table partitioned by week and clustered on distributor and film.
+The data format is relatively complicated: an excel file from which we only select the top 15 rows, clean it and format it to csv file. The DAG creates or appends the data to a BigQuery table partitioned by sunday date (report_date) and clustered on distributor, rank and film.
 
-dbt is used for creating the transformations needed for the visualizations. A view is created in a staging phase with aggregations by distributor and film and a final table containing the aggregations by distributor alone is materialized in the deployment phase.
+dbt is used to transform the data for visualization. A view is created in a staging phase with deduplicated data from the the raw BigQuery table where we loaded the csv files and a final table containing the aggregations by distributor alone is materialized in the deployment phase.
 
-The dashboard is a simple Google Looker Studio report with 2 widgets.
+The dashboard is a simple Google Looker Studio report with 5 widgets.
 
 
 ## Project Replication
@@ -135,7 +136,7 @@ Run `gcloud config list` to check the configurations and ensure you're using the
 
 ### Create a VM instance
  In the Google Cloud console, go to **Menu ≡ > Compute Engine > VM instances > Create instance**. Follow these steps to generate the instance.
-1. Chose any name for your instance.
+1. Choose any name for your instance.
 1. Select the best region and zone that work for you. Make sure you use the same location across all the Google Cloud components.<br>
 The other components will be generated with Terraform and you should modify the variables `region` and `location` inside the `variables.tf` file to be the same as the VM region.
 1. Select a _E2 series_ instance. A _e2-standard-4_ instance is recommended (4 vCPUs, 16GB RAM)
@@ -170,55 +171,67 @@ Once created, the instance starts automatically. You can stop and start it again
 
 In order to SSH to the VM you need to create a public-private key pair and load or propagate the public key to the VM. 
 
-1. You can use the course method by running
+You can use the course method by running
    ```bash
     ssh-keygen -t rsa -f ~/.ssh/gcp -C <vm_username> -b 2048
    ```
 to create the ssh keys called _gcp_ and _gcp.pub_ in the `~/.ssh` folder locally. 
 In GCP Console, you need to go into **Compute Engine > Settings > Metadata > SSH Keys > Edit > Add item** and copy paste the contents of the public key.
 
-1. Or you can run
-   ```bash
-   #  List the available instances
-   gcloud compute instances list
-
-   # SSH into the chosen VM instance
-   cloud compute ssh <VM_NAME> --zone=<ZONE>
-   ```
-
-
 In VSCode, with the Remote SSH extension, if you run the [command palette](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette) and look for _Remote-SSH: Connect to Host_, the instance should appear in the list. Select it to connect to it and work remotely.
+
+
+### SSH into the VM
+Navigate to the `~/.ssh` folder and edit the `config` file with `nano config`.
+Copy paste the below and edit to match your settings
+```
+Host <vm_name>
+    Hostname <public_ip_address>
+    User <vm_username>
+    IdentityFile ~/.ssh/gcp
+```
+Then you can run `ssh <vm_name>` to connect. 
+Copy paste `<public_ip_address>` from the VM Console and make sure you change `<public_ip_address>` every time you stop and restart the VM.
 
 
 ### Install Terraform on the VM
 The project uses Terraform to create GCP infrastructure, namely a BigQuery dataset and a Composer environment which creates its own Storage Bucket.
 Run this code
    ```bash
-   # 1. Download and add HashiCorp’s GPG key to verify package authenticity
+   # Download and add HashiCorp’s GPG key to verify package authenticity
     curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
 
-    # 2. Add the official HashiCorp APT repository to your system's sources list
+    # Add the official HashiCorp APT repository to your system's sources list
     sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
 
-    # 3. Update the package list and install Terraform
+    # Update the package list and install Terraform
     sudo apt-get update && sudo apt-get install terraform
    ```
 
 
 ### Google credentials
-You will need to upload the `google_credentials.json` to `$HOME/.google/credentials/` folder on your VM. These are the credentials used by the service account to access the GCP resources.
-You also need to create the `$GOOGLE_APPLICATION_CREDENTIALS` variable as specified earlier.
-You can upload the file to the VM using 
+You will need to upload the `google_credentials.json` to `~/.google/credentials/` folder on your VM. These are the credentials used by the service account to access the GCP resources.
+
+On the remote terminal create the folder path `~/.google/credentials/`.
    ```bash
-    scp path/to/local/machine/file <instance_name>:path/to/remote/vm/file
+   mkdir .google
+   cd .google
+   mkdir credentials
    ```
+In a local terminal upload the credentials to the VM.
+   ```bash
+   scp $HOME/.google/credentials/google_credentials.json <vm_name>:~/.google/credentials/google_credentials.json
+   ```
+where `<vm_name>` is the same one as in the `~/.ssh/config` file.
+
+
 
 ### Clone the repo in the VM
-Log in to your VM instance and run this code from the `HOME` folder:
+Log to your VM instance and run this code from the `HOME` folder:
 ```bash
   git clone git@github.com:buzdugan/weekend_box_office.git
 ```
->***IMPORTANT*** I recommend that you fork the project and clone your copy to be able to change some variable in the code. If you skip this step, you will need to open the code in VS Code SSH Remote-Host, make the changes there then save them just of the instance.
+>***IMPORTANT:*** I recommend that you fork the project and clone your copy to be able to change some variable in the code. If you skip this step, you will need to open the code in VS Code SSH Remote-Host, make the changes there then save them just on the instance.
 
 
 ### Set up Cloud infrastructure
@@ -230,7 +243,7 @@ Make sure you use the region and location closest to you, the same ones you used
 Terraform with generate 2 resources: a BigQuery dataset and a Cloud Composer 3 environment.<br>
 Cloud Composer will be used to orchestrate the workflow. It is a fully managed workflow orchestration service built on Apache Airflow, designed to automate and manage data pipelines. It integrates seamlessly with GCP suite of data analytics services. Because it’s fully managed, it reduces operational overhead by automating Airflow infrastructure management.
 
->***IMPORTANT***: Creating a Composer 3 environment can take 20 minutes or more, so make sure the settings are correct before launching it.
+>***IMPORTANT:***: Creating a Composer 3 environment can take 20 minutes or more, so make sure the settings are correct before launching it.
 
 In the `variables.tf` file, you will need to change several variables to customize it to your project: `project`, `region` and `location`.
 
@@ -348,6 +361,9 @@ Dashboards in Looker are called _reports_. Reports get data from _data sources_,
    1. Click on _Add control > Date range control_. It defaults to `report_date`. Choose the interval 1 January 2017 to current date to view all the data.
    1. Click on _Add control > Drop-down list_
       * Control field `top_rank_category`
+
+   1. To create the chart _Number of unique distributors_, click on _Add a chart > Scorecard_. 
+      * Primery field Metric CTD `distributor`
 
    1. To create the chart _Total weekend gross across all distributors_, click on _Add a chart > Time series chart_. 
       * Dimension `report_date` 
