@@ -7,7 +7,7 @@
 
 This repository is the final project for the Data Engineering Zoomcamp, cohort 2025. 
 
-The dashboard can be found [here](https://lookerstudio.google.com/u/1/reporting/14aae220-8453-4fcf-b5a3-0754a31ac256/page/PsvGF).
+The dashboard can be found [here](https://lookerstudio.google.com/reporting/1ad7f7c2-bdd3-467a-a5f1-3eeb4ea3ddc2/page/M6DHF).
 
 
 ---
@@ -46,11 +46,11 @@ The figures cover box offices grosses in pounds sterling, Friday to Sunday, and 
 
 
 ## Problem Description
-This is a simple project which takes data from the the website provided above and transforms it in order to visualize the movie distributors distribution by number of top grossing films over the weekend as well as a ranking of the top grossing films.
+This is a simple project which takes data from the the website provided above and transforms it in order to visualize the performance of movie distributors from 2017 onwards. The dashboards displays the total weekend earnings by week, the distribution of total earnings, the number of weekly top rank category and maximum weekly number of movies.
 
 
 ## Project Objective
-The aim of the project is to handle the ingestion, processing and data analysis, including a dashboard for data visualizations, in order to answer several questions about the top films released in the UK since 2017.
+The aim of the project is to handle the x, processing and data analysis, including a dashboard for data visualizations, in order to answer several questions about the top films released in the UK since 2017.
 
 
 ## Technologies
@@ -293,15 +293,15 @@ If the dag is run on any other day, it should not upload the data and should log
 
 1. Create a [dbt Cloud account](https://www.getdbt.com/).
 1. Create a new project.
-    1. Name the project `weekend-box-office` and under _Advanced settings_, set `dbt` as the _Project subdirectory_.
-    1. Select _BigQuery_ as a database connection.
-    1. Select the settings:
-        * Upload a Service Account JSON file > choose the `google_credentials.json` that was created previously.
-        * Under _Optional Settings_, make sure that you put your Google Cloud location under _Location_, otherwise it will default to US and dbt won't be able to create tables in the target dataset.
-    1. Under _Development credentials_, choose `uk_movies_dev` as Dataset. This is where dbt will write your models during development.
-        * Test the connection and click on _Continue_ once the connection is tested successfully.
+   1. Name the project `weekend-box-office` and under _Advanced settings_, set `dbt` as the _Project subdirectory_.
+   1. Select _BigQuery_ as a database connection.
+   1. Select the settings:
+      * Upload a Service Account JSON file > choose the `google_credentials.json` that was created previously.
+      * Under _Optional Settings_, make sure that you put your Google Cloud location under _Location_, otherwise it will default to US and dbt won't be able to create tables in the target dataset.
+   1. Under _Development credentials_, choose `uk_movies_dev` as Dataset. This is where dbt will write your models during development.
+      * Test the connection and click on _Continue_ once the connection is tested successfully.
 
-    1. In _Setup a repository_, select Github and choose your fork from your user account or you can provide a URL and clone the repo.
+   1. In _Setup a repository_, select Github and choose your fork from your user account or you can provide a URL and clone the repo.
 1. Once the project has been created, you should be able to click on **Develop > Cloud IDE**.
 
 First you need to install the packages by running `dbt deps` in the bottom prompt.
@@ -317,37 +317,55 @@ Then run `dbt run`  to run the 3 models which will generate 3 datasets in BigQue
 1. Click on the _Create environment_ button on the top right.
 1. Name the environment `Production` of type _Deployment_. 
 1. Choose _BigQuery_ Connection
-1. In _Deployment credentials_, choose `prod` for _Dataset_ field. This is where dbt will write your models during deployment.
+1. In _Deployment credentials_, choose `production` for _Dataset_ field. This is where dbt will write your models during deployment.
 1. Create a new job with these settings:
-    * _Deploy_ job
-    * Job name `weekly run`
-    * Commands `dbt build`
-    * Environment `Production`.
-    * Click _Generate docs on run_ checkbox to create documentation.
-    * Choose _Run on schedule_ checkbox, select _custom cron schedule_ and input  `0 11 * * 4` to run every Thursday at 11 am to allow the weekly DAG run to be successful.
+   * _Deploy_ job
+   * Job name `weekly run`
+   * Commands `dbt build`
+   * Environment `Production`.
+   * Click _Generate docs on run_ checkbox to create documentation.
+   * Choose _Run on schedule_ checkbox, select _custom cron schedule_ and input  `0 11 * * 4` to run every Thursday at 11 am to allow the weekly DAG run to be successful.
 1. Save the job.
 
-You can now trigger the job manually or you may wait until the scheduled trigger to run it. The first time you run it, 3 new datasets will be added to BigQuery in the `prod` dataset with the same pattern as in the Development environment.
+You can now trigger the job manually or you may wait until the scheduled trigger to run it. The first time you run it, 3 new datasets will be added to BigQuery in the `production` dataset with the same pattern as in the Development environment.
 
 
 ### Create the dashboard
 
-The dashboard for this project can be found [here](https://lookerstudio.google.com/u/1/reporting/14aae220-8453-4fcf-b5a3-0754a31ac256/page/PsvGF).
+The dashboard for this project can be found [here](https://lookerstudio.google.com/reporting/1ad7f7c2-bdd3-467a-a5f1-3eeb4ea3ddc2/page/M6DHF).
 It was created with [Google Looker Studio](https://lookerstudio.google.com/overview).
 Dashboards in Looker are called _reports_. Reports get data from _data sources_, so you will need to generate a data source first then the report.
 
 1. Generate the data source.
-    1. Click on the _Create_ button and choose _Data Source_.
-    1. Click on the _BigQuery_ connector.
-    1. Choose the Google Cloud project > `prod` dataset > `mart_distributor_performance` table. Click on the _Connect_ button at the top.
-    1. You can choose _None_ for all default aggregations.
+   1. Click on the _Create_ button and choose _Data Source_.
+   1. Click on the _BigQuery_ connector.
+   1. Choose the Google Cloud project > `production` dataset > `mart_distributor_performance` table > Use report_date as date range dimension. Click on the _Connect_ button at the top.
+   1. You can choose _None_ for all default aggregations or leave it as such.
 
 1. Generate the report.
-    1. From table page, click on the _Create Report_ button.
-    1. Click on _Add a chart_ and select a Pie chart. Dimension `distributor` and Metric `total_films`. This shows the number of distribution of distinct films by distributor.
+   1. From table page, click on the _Create Report_ button.
 
-    1. Click on _Add a chart_ and select a Horizontal Bar chart. Dimension `distributor` and Metric Max `top_film_gross`. This shows the maximum gross by a film by distributor.
+   1. Click on _Add control > Date range control_. It defaults to `report_date`. Choose the interval 1 January 2017 to current date to view all the data.
+   1. Click on _Add control > Drop-down list_
+      * Control field `top_rank_category`
+
+   1. To create the chart _Total weekend gross across all distributors_, click on _Add a chart > Time series chart_. 
+      * Dimension `report_date` 
+      * Metric SUM `total_weekend_gross`
+
+   1. To create the chart _Distribution of total earnings to date by movie distributor_, click on _Add a chart > Pie chart_.
+      * Dimension `distributor` 
+      * Metric SUM `total_gross_to_date`
+
+   1. To create the chart _Number of weekly top rank category by distributor_, click on _Add a chart > Pivot table_.
+      * Row dimension `distributor` 
+      * Column dimension `top_rank_category` 
+      * Metric AUT `Record Count`
+
+   1. To create the chart _Maximum weekly number of movies in top 15 by distributor_, click on _Add a chart > Horizontal bar chart_.
+      * Dimension `distributor` 
+      * Metric Max `number_of_films`
 
 You should now have a functioning dashboard.
 
-_[Back to the repo index](https://github.com/buzdugan/weekend_box_office)_
+_[Back to the top](https://github.com/buzdugan/weekend_box_office)_
