@@ -40,7 +40,7 @@ The dashboard can be found [here](https://lookerstudio.google.com/reporting/1ad7
 
 
 ## Data Description
-The data comes from the British Film Institute (BFI) [Weekend Box Office](https://www.bfi.org.uk/).
+The data comes from the British Film Institute (BFI) [Weekend Box Office](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures).
 Each week the BFI publishes box office figures for the top 15 films released in the UK, all other British releases and newly-released films.<br>
 The figures cover box offices grosses in pounds sterling, Friday to Sunday, and show the performance of each film compared to the previous week and its total UK box office gross since release.
 
