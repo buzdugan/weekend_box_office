@@ -31,12 +31,12 @@ resource "google_composer_environment" "composer3_env" {
   config {
     software_config {
       image_version = "composer-3-airflow-2.10.2-build.12"
-      pypi_packages = {
-        beautifulsoup4  = "==4.9.3"
-        openpyxl        = "==3.1.5"
-        xlrd            = "==2.0.1"
-      }
+    }
 
+    pypi_packages = {
+      beautifulsoup4  = "==4.9.3"
+      openpyxl        = "==3.1.5"
+      xlrd            = "==2.0.1"
     }
 
     node_config {
