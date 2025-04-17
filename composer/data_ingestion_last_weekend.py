@@ -233,7 +233,7 @@ with DAG(
                 "sourceFormat": "CSV",
                 "writeDisposition": "WRITE_APPEND",
                 "timePartitioning": {"type": "DAY", "field": "report_date"},
-                "clustering": {"fields": ["rank", "distributor", "film"]},
+                "clustering": {"fields": ["distributor", "rank", "film"]},
             }
         },
     )
