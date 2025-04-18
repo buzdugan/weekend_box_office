@@ -390,35 +390,35 @@ It was created with [Google Looker Studio](https://lookerstudio.google.com/overv
 Dashboards in Looker are called _reports_. Reports get data from _data sources_, so you will need to generate a data source first then the report.
 
 1. Generate the data source.
-   1. Click on the _Create_ button and choose _Data Source_.
-   1. Click on the _BigQuery_ connector.
-   1. Choose the Google Cloud project > `production` dataset > `mart_distributor_performance` table > Use report_date as date range dimension. Click on the _Connect_ button at the top.
-   1. You can choose _None_ for all default aggregations or leave it as such.
+   * Click on the _Create_ button and choose _Data Source_.
+   * Click on the _BigQuery_ connector.
+   * Choose the Google Cloud project > `production` dataset > `mart_distributor_performance` table > Use report_date as date range dimension. Click on the _Connect_ button at the top.
+   * You can choose _None_ for all default aggregations or leave it as such.
 
 1. Generate the report.
-   1. From table page, click on the _Create Report_ button.
+   * From table page, click on the _Create Report_ button.
 
-   1. Click on _Add control > Date range control_. It defaults to `report_date`. Choose the interval 1 January 2017 to current date to view all the data.
-   1. Click on _Add control > Drop-down list_
+   * Click on _Add control > Date range control_. It defaults to `report_date`. Choose the interval 1 January 2017 to current date to view all the data.
+   * Click on _Add control > Drop-down list_
       * Control field `top_rank_category`
 
-   1. To create the chart _Number of unique distributors_, click on _Add a chart > Scorecard_. 
+   * To create the chart _Number of unique distributors_, click on _Add a chart > Scorecard_. 
       * Primery field Metric CTD `distributor`
 
-   1. To create the chart _Total weekend gross across all distributors_, click on _Add a chart > Time series chart_. 
+   * To create the chart _Total weekend gross across all distributors_, click on _Add a chart > Time series chart_. 
       * Dimension `report_date` 
       * Metric SUM `total_weekend_gross`
 
-   1. To create the chart _Distribution of total earnings to date by movie distributor_, click on _Add a chart > Pie chart_.
+   * To create the chart _Distribution of total earnings to date by movie distributor_, click on _Add a chart > Pie chart_.
       * Dimension `distributor` 
       * Metric SUM `total_gross_to_date`
 
-   1. To create the chart _Number of weekly top rank category by distributor_, click on _Add a chart > Pivot table_.
+   * To create the chart _Number of weekly top rank category by distributor_, click on _Add a chart > Pivot table_.
       * Row dimension `distributor` 
       * Column dimension `top_rank_category` 
       * Metric AUT `Record Count`
 
-   1. To create the chart _Maximum weekly number of movies in top 15 by distributor_, click on _Add a chart > Horizontal bar chart_.
+   * To create the chart _Maximum weekly number of movies in top 15 by distributor_, click on _Add a chart > Horizontal bar chart_.
       * Dimension `distributor` 
       * Metric Max `number_of_films`
 
