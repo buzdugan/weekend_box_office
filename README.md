@@ -234,6 +234,7 @@ You need to upload the private key from the `~/.ssh/` folder called `id_ed25519`
    ```bash
    scp $HOME/.ssh/id_ed25519 <vm_name>:~/.ssh/id_ed25519
    ```
+If you happen to have a github private key with a different name, then make sure you upload that one.
 
 
 ### Clone the repo in the VM
@@ -316,7 +317,7 @@ Navigate to `<some_path_to_local_folder>` and load the historical data to the Bi
   --field_delimiter="," \
   --time_partitioning_field=report_date \
   --clustering_fields=distributor,rank,film \
-  weekend-box-office:uk_movies_vm.weekend_top_15_movies \
+  weekend-box-office:uk_movies.weekend_top_15_movies \
   <some_path_to_local_folder>/historical_data.csv \
   report_date:DATE,rank:INTEGER,film:STRING,country_of_origin:STRING,weekend_gross:INTEGER,distributor:STRING,percent_change_on_last_week:FLOAT,weeks_on_release:INTEGER,number_of_cinemas:INTEGER,site_average:INTEGER,total_gross_to_date:INTEGER
    ```
@@ -338,7 +339,7 @@ Save the file and then load it into the dags folder via the GCP Console by going
 Then go to the Airflow UI page and keep refreshing until the dag appears in the list. This can take anywhere between 30 seconds to 2 minutes.
 
 `data_ingestion_last_sunday` is automatically triggered on load, but otherwise it is scheduled to run every Thursday	at 10 am to allow for the report with the data for the previous weekend to be uploaded to the website.
-If run from Thursday to Saturday, it should upload in the `data/` folder the data from the previous weekend as excel and csv files, then append the data to the BigQuery table `weekend-box-office.uk_movies.weekend_top_15_movies`.
+If run from Thursday to Saturday, it should upload in the `data/` folder the data from the previous weekend as excel and csv files, append the csv file to the BigQuery table `weekend-box-office.uk_movies.weekend_top_15_movies` and delete the two files downloaded.
 If the dag is run on any other day, it should not upload the data and should log that the report is not yet available.
 
 
@@ -358,10 +359,10 @@ If the dag is run on any other day, it should not upload the data and should log
 1. Once the project has been created, you should be able to click on **Develop > Cloud IDE**.
 
 First you need to install the packages by running `dbt deps` in the bottom prompt.
-Then run `dbt run`  to run the 3 models which will generate 3 datasets in BigQuery:
-* `uk_movies_dev.stg_movies` with view of the source data from the `uk_movies.weekend_top_15_movies`
-* `uk_movies_dev.stg_movies` with staging view for generating the final end-user tables.
-* `uk_movies_dev.mart_distributor_performance` with the end-user table for the dashboard.
+Then run `dbt run` which will generate 3 datasets in BigQuery:
+* `uk_movies_dev.stg_movies`, view of the deduplicated source data from `uk_movies.weekend_top_15_movies`
+* `uk_movies_dev.int_movie_performance`, view with more derived columns
+* `uk_movies_dev.mart_distributor_performance`, table with data for the dashboard, partitioned by `report_date` and clustered by `distributor` and `top_rank_category` which are used as filters in the dashboard.
 
 
 ### Deploy models in dbt Cloud with a Production environment
@@ -423,5 +424,6 @@ Dashboards in Looker are called _reports_. Reports get data from _data sources_,
       * Metric Max `number_of_films`
 
 You should now have a functioning dashboard.
+
 
 _[Back to the top](https://github.com/buzdugan/weekend_box_office)_
