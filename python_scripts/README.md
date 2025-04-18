@@ -1,27 +1,56 @@
-Use these steps if you want to download the historical data locally and load it to the BigQuery table.
+Use these steps if you want to download the historical data on the VM and load it to the BigQuery table.
 
-### Install python and pip
-If you install python from [python.org](https://www.python.org/downloads/), pip is included by default.<br>
-PATH configuration:
-- On Windows, the python installer has an option **"Add Python to PATH"** during installation. If checked, both python and pip will be available in the command line automatically.
-- On macOS and Linux, python is usually installed with pip included, and it is typically added to PATH by default.
+Python 3 comes preinstalled on the VM type chosen in the [Create a VM instance](../README.md#create-a-vm-instance) subsection.
+You can check this with
+   ```bash
+    which python
+    # or
+    python3 --version  # the default version is Python 3.8.10
+   ```
 
-If that is not the case, follow [these instructions](https://realpython.com/add-python-to-path/) to add python to PATH and call the executable in the terminal.<br>
-If pip is not installed directly, follow the steps from the [pip documentation](https://pip.pypa.io/en/stable/installation/).<br>
+### Install pip
+You need to install pip to be able to install the requiered packages.
+   ```bash
+    # Update package list
+    sudo apt update
+
+    # Install pip for Python 3
+    sudo apt install -y python3-pip
+
+    # Verify the installation 
+    pip --version
+   ```
 
 
-### Create a virtual environment with virtualenv
-virtualenv allows you to create a virtual environment with your chosen python version. Ensure you have virtualenv installed by using pip<br>
-`pip install virtualenv`
+### Create a virtual environment and install the packages
+virtualenv allows you to create a virtual environment with your chosen python version. Ensure you have virtualenv installed by using pip.
+   ```bash
+    pip install virtualenv
+   ```
 
-Create a python virtual environment with your chosen python version and install the packages from `requirements.txt` file.<br>
-`virtualenv -p python3.13 venv`
+Add the folder where virtualenv was installed to PATH.
+   ```bash
+    # Open your shell config file
+    nano ~/.bashrc
 
-Activate the virtual environment using the appropriate command for your operating system:<br>
-- On Windows `venv\Scripts\activate`
-- On macOS/Linux `source venv/bin/activate`
+    # Add this line at the bottom
+    export PATH="$HOME/.local/bin:$PATH"  # Control + X and Y to save
 
+    # Reload the shell
+    source ~/.bashrc
 
-Install the necessary packages<br>
-`pip install -r python_scripts/requirements.txt`
+    # Test that it was added
+    which virtualenv
+   ```
 
+Create a python virtual environment and install the packages from `requirements.txt` file.
+   ```bash
+    # Create the environment
+    virtualenv -p python3.8 venv
+
+    # Activate it
+    source venv/bin/activate
+
+    # Install the packages
+    pip install -r python_scripts/requirements.txt
+   ```
