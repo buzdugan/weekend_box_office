@@ -281,10 +281,9 @@ Check again for packages when the environment is recreated.
 
 
 #### Load the historical data
-The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a connection between the date and the download link.
-For example, for the weekend 11 to 13 April 2025, the link is https://core-cms.bfi.org.uk/media/40559/download.
+The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a direct connection between the dates and the download links, as the latter are of the structure `https://core-cms.bfi.org.uk/media/<some_random_number>/download`.
 
-Therefore the dates need to be extracted from the text in the website, and mapped to the download links. This makes the historical data load more involved.
+Therefore the dates need to be extracted from the text in the website and mapped to the download links. This makes the historical data load more involved.
 
 The dag `data_ingestion_current_year.py` should download the reports from 2025 in task groups in parallel. However, it takes a long time to run, therefore it is infinitely faster and strongly recommended to run the code from the `python_scripts` folder to download the data on the VM, then load it from there to BigQuery. 
 
