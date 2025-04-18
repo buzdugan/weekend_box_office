@@ -346,15 +346,15 @@ If the dag is run on any other day, it should not upload the data and should log
 
 1. Create a [dbt Cloud account](https://www.getdbt.com/).
 1. Create a new project.
-   1. Name the project `weekend-box-office` and under _Advanced settings_, set `dbt` as the _Project subdirectory_.
-   1. Select _BigQuery_ as a database connection.
-   1. Select the settings:
+   * Name the project `weekend-box-office` and under _Advanced settings_, set `dbt` as the _Project subdirectory_.
+   * Select _BigQuery_ as a database connection.
+   * Select the settings:
       * Upload a Service Account JSON file > choose the `google_credentials.json` that was created previously.
       * Under _Optional Settings_, make sure that you put your Google Cloud location under _Location_, otherwise it will default to US and dbt won't be able to create tables in the target dataset.
-   1. Under _Development credentials_, choose `uk_movies_dev` as Dataset. This is where dbt will write your models during development.
+   * Under _Development credentials_, choose `uk_movies_dev` as Dataset. This is where dbt will write your models during development.
       * Test the connection and click on _Continue_ once the connection is tested successfully.
 
-   1. In _Setup a repository_, select Github and choose your fork from your user account or you can provide a URL and clone the repo.
+   * In _Setup a repository_, select Github and choose your fork from your user account or you can provide a URL and clone the repo.
 1. Once the project has been created, you should be able to click on **Develop > Cloud IDE**.
 
 First you need to install the packages by running `dbt deps` in the bottom prompt.
