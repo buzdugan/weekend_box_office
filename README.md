@@ -28,11 +28,13 @@ The dashboard can be found [here](https://lookerstudio.google.com/reporting/1ad7
   - [Set up SSH access to the VM instance](#set-up-ssh-access-to-the-vm-instance)
   - [SSH into the VM](#ssh-into-the-vm)
   - [Install Terraform on the VM](#install-terraform-on-the-vm)
-  - [Google credentials](#google-credentials)
+  - [Load the credentials to the VM](#load-the-credentials-to-the-vm)
+    - [Google credentials](#google-credentials)
+    - [Github private key](#github-private-key)
   - [Clone the repo in the VM](#clone-the-repo-in-the-vm)
   - [Set up Cloud infrastructure](#set-up-cloud-infrastructure)
   - [Cloud Composer](#cloud-composer)
-    - [Load the historical DAG](#load-the-historical-dag)
+    - [Load the historical data](#load-the-historical-data)
     - [Load the weekly DAG](#load-the-weekly-dag)
     - [Run the weekly DAG](#run-the-weekly-dag)
   - [Set up dbt Cloud](#set-up-dbt-cloud)
@@ -209,8 +211,11 @@ Run this code
    ```
 
 
-### Google credentials
-You will need to upload the `google_credentials.json` to `~/.google/credentials/` folder on your VM. These are the credentials used by the service account to access the GCP resources.
+### Load the credentials to the VM
+You will need to upload the `google_credentials.json`, used by the service account to access the GCP resources, and the private key to for your github account to be able to clone the repository on the VM.
+
+#### Google credentials
+You need to upload `google_credentials.json` to `~/.google/credentials/` folder on your VM.
 
 On the remote terminal create the folder path `~/.google/credentials/`.
    ```bash
@@ -224,14 +229,19 @@ In a local terminal upload the credentials to the VM.
    ```
 where `<vm_name>` is the same one as in the `~/.ssh/config` file.
 
+#### Github private key
+You need to upload the private key from the `~/.ssh/` folder called `id_ed25519`. The folder `~/.ssh` is created by default on the VM. From the local terminal run the command
+   ```bash
+   scp $HOME/.ssh/id_ed25519 <vm_name>:~/.ssh/id_ed25519
+   ```
 
 
 ### Clone the repo in the VM
-Log to your VM instance and run this code from the `HOME` folder:
+In on VM terminal run this code from the `HOME` folder:
 ```bash
   git clone git@github.com:buzdugan/weekend_box_office.git
 ```
->***IMPORTANT:*** I recommend that you fork the project and clone your copy to be able to change some variable in the code. If you skip this step, you will need to open the code in VS Code SSH Remote-Host, make the changes there then save them just on the instance.
+>***IMPORTANT:*** I recommend that you fork the project and clone your copy to be able to change some variables in the code. If you skip this step, you will need to open the code in VS Code SSH Remote-Host, make the changes there then save them just on the instance without being able to push them to the original repository.
 
 
 ### Set up Cloud infrastructure
@@ -254,12 +264,14 @@ Use the steps below to generate resources inside the GCP:
 4. Run `terraform apply` to apply changes to the infrastructure in the cloud.
 
 Once the resources you've created in the cloud are no longer needed, use `terraform destroy` to remove everything.
-
+ 
 
 ### Cloud Composer
 
 #### Check packages
-Once the Composer environment was created, click on its name and go to _Pypi packages_ in the menu bar.
+Composer 3 images come with [predefined list of installed python packages](https://cloud.google.com/composer/docs/composer-versions#images). So you only need to add whatever is not already installed.
+
+Terraform seems to provide conflicting documentation [here](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/composer_environment) regarding `pypi_packages`. For Composer 3, it should sit under `sofware_config`, which is where it is in the `main.tf` file. However, when testing the code, the packages failed to get installed, so you once the Composer environment gets created, in the Composer Environments dashboard click on its name and go to _Pypi packages_ in the menu bar.
 
 Check if the packages listed in the `main.tf` file got installed. If any of them is missing, you will need to click _ADD PACKAGE_. Get the package name from the terraform file (no quotes) and the version in _Extras and version 1_ tab (no quotes).
 
@@ -267,21 +279,49 @@ When you click _Save_, the packages will be installed and the environment will b
 Check again for packages when the environment is recreated.
 
 
-#### Load the historical DAG
-The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a connection between the date and the download link, so the dates need to be extracted from the text in the website, which makes the historical data load quite convoluted.
+#### Load the historical data
+The reports on the [Weekend Box Office website](https://www.bfi.org.uk/industry-data-insights/weekend-box-office-figures) don't create a connection between the date and the download link.
+For example, for the weekend 11 to 13 April 2025, the link is https://core-cms.bfi.org.uk/media/40559/download.
 
-The dag `data_ingestion_current_year.py` downloads the reports from 2025 in parallel. However, it takes a long time to do that, therefore it is faster and recommended to run the code from the `python_scripts` folder to download the data locally. The script `historic_data_download.py` will generate a csv file with all the data called `../wbo_reports/historical_data.csv`.
- and then load it to the BigQuery table via the command line.
+Therefore the dates need to be extracted from the text in the website, and mapped to the download links. This makes the historical data load more involved.
+
+The dag `data_ingestion_current_year.py` should download the reports from 2025 in task groups in parallel. However, it takes a long time to run, therefore it is infinitely faster and strongly recommended to run the code from the `python_scripts` folder to download the data on the VM, then load it from there to BigQuery. 
+
+Make sure you follow the instructions [here](./python_scripts/README.md) to create a virtual environment, activate it and install the required packages.
+
+Once your virtual environment is set up, from the repo home folder on the VM terminal run
+   ```bash
+    python3 python_scripts/historic_data_download.py
+   ```
+
+The script `historic_data_download.py` should only take a couple of minutes to run and it will generate a csv file with all the data called `../wbo_reports/historical_data.csv`.
+You can either check in VS Code or using the code below to see if the data was generated.
+   ```bash
+    # Navigate to the newly created folder
+    cd wbo_reports
+    # Check the historical_data.csv was created
+    ls
+   ```
+
+To load the data to a BigQuery table, you need Google Cloud SDK. Since it's already installed on the local machine, it's best to download the file to the local machine first. Make sure `<some_path_to_local_folder>` already exists before running the code below in the local terminal.
+   ```bash
+    scp <instance_name>:~/weekend_box_office/wbo_reports/historical_data.csv <some_path_to_local_folder>/historical_data.csv
+   ```
+
+Navigate to `<some_path_to_local_folder>` and load the historical data to the BigQuery table via the command line.
    ```bash
   bq load \
   --source_format=CSV \
   --skip_leading_rows=1 \
   --field_delimiter="," \
-  weekend-box-office:uk_movies_test.weekend_top_15_movies \
-  <path_before_the_repo_folder>/weekend_box_office/wbo_reports/historical_data.csv \
+  --time_partitioning_field=report_date \
+  --clustering_fields=distributor,rank,film \
+  weekend-box-office:uk_movies_vm.weekend_top_15_movies \
+  <some_path_to_local_folder>/historical_data.csv \
   report_date:DATE,rank:INTEGER,film:STRING,country_of_origin:STRING,weekend_gross:INTEGER,distributor:STRING,percent_change_on_last_week:FLOAT,weeks_on_release:INTEGER,number_of_cinemas:INTEGER,site_average:INTEGER,total_gross_to_date:INTEGER
    ```
-If you prefer to use the dag, then follow the same steps as for loading the weekly dag.
+The code creates the partitioned and clustered table with a predefined schema. Make sure you change the path to match yours.
+
 
 #### Load the weekly DAG
 Composer creates its own bucket where it stores objects such as dags, data, plugins and logs in their respective folders.
