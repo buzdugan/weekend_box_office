@@ -7,8 +7,6 @@
 
 This repository is the final project for the Data Engineering Zoomcamp, cohort 2025. 
 
-The dashboard can be found [here](https://lookerstudio.google.com/reporting/1ad7f7c2-bdd3-467a-a5f1-3eeb4ea3ddc2/page/M6DHF).
-
 
 ---
 ## Index
@@ -385,8 +383,12 @@ You can now trigger the job manually or you may wait until the scheduled trigger
 
 ### Create the dashboard
 
-The dashboard for this project can be found [here](https://lookerstudio.google.com/reporting/1ad7f7c2-bdd3-467a-a5f1-3eeb4ea3ddc2/page/M6DHF).
-It was created with [Google Looker Studio](https://lookerstudio.google.com/overview).
+<p align="center">
+  <img src="images\Dashboard.png">
+</p>
+
+
+The dashboard was created with [Google Looker Studio](https://lookerstudio.google.com/overview).
 Dashboards in Looker are called _reports_. Reports get data from _data sources_, so you will need to generate a data source first then the report.
 
 1. Generate the data source.
